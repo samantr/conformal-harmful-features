@@ -1,7 +1,5 @@
 import argparse
-import hashlib
 import json
-import subprocess
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -11,67 +9,13 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from chf.conformal import calibrate_threshold, evaluate_prediction_sets
 from chf.data import (
     class_separation_ratios,
-    make_controlled_multiclass,
     make_four_way_split,
     save_split_artifact,
 )
-from chf.metrics import classification_metrics, conditional_coverage_metrics
+from chf.experiments import code_version, dataset_from_config, evaluate_logits, split_id
 from chf.models import fit_classifier
-from chf.scaling import (
-    probabilities_from_logits,
-    probability_diagnostics,
-    tune_confts,
-    tune_temperature,
-)
-
-
-def _split_id(split: Any) -> str:
-    digest = hashlib.sha256()
-    for name in ("train", "tune", "calibration", "test"):
-        digest.update(name.encode("utf-8"))
-        digest.update(np.asarray(getattr(split, name), dtype=np.int64).tobytes())
-    return digest.hexdigest()[:16]
-
-
-def _code_version(repository_root: Path) -> str:
-    try:
-        commit = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=repository_root,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        dirty = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=repository_root,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        return f"{commit}-dirty" if dirty else commit
-    except (OSError, subprocess.CalledProcessError):
-        return "unknown"
-
-
-def _dataset_from_config(config: dict[str, Any]):
-    dataset_config = config["dataset"]
-    feature_config = dataset_config["features"]
-    return make_controlled_multiclass(
-        n_samples=int(dataset_config["n_samples"]),
-        n_classes=int(dataset_config["n_classes"]),
-        n_strong=int(feature_config["strong"]),
-        n_weak=int(feature_config["weak"]),
-        n_redundant=int(feature_config["redundant"]),
-        n_noise=int(feature_config["noise"]),
-        seed=int(config["seed"]),
-        strong_signal=float(dataset_config.get("strong_signal", 1.0)),
-        weak_signal=float(dataset_config.get("weak_signal", 0.25)),
-        redundant_noise=float(dataset_config.get("redundant_noise", 0.15)),
-    )
 
 
 def _save_feature_manifest(dataset, train_indices: np.ndarray, output_dir: Path) -> None:
@@ -128,14 +72,14 @@ def _save_feature_manifest(dataset, train_indices: np.ndarray, output_dir: Path)
 
 def run(config: dict[str, Any], output_dir: Path, repository_root: Path) -> pd.DataFrame:
     seed = int(config["seed"])
-    dataset = _dataset_from_config(config)
+    dataset = dataset_from_config(config)
     split_config = config["split"]
     sizes = tuple(
         int(split_config[name])
         for name in ("train", "tune", "calibration", "test")
     )
     split = make_four_way_split(dataset.labels, sizes, seed)
-    split_identifier = _split_id(split)
+    split_identifier = split_id(split)
     output_dir.mkdir(parents=True, exist_ok=True)
     save_split_artifact(
         output_dir / "split_indices.npz",
@@ -151,11 +95,6 @@ def run(config: dict[str, Any], output_dir: Path, repository_root: Path) -> pd.D
 
     conformal_config = config["conformal"]
     alpha = float(conformal_config["alpha"])
-    temperature_grid = [float(value) for value in config["temperature"]["grid"]]
-    ece_bins = int(config.get("metrics", {}).get("ece_bins", 15))
-    min_sscv_size = int(
-        config.get("metrics", {}).get("min_sscv_stratum_size", 25)
-    )
     raps_lambda = float(conformal_config["raps_lambda"])
     raps_k_reg = int(conformal_config["raps_k_reg"])
     calibration_uniforms = np.random.default_rng(seed + 10_001).random(
@@ -163,7 +102,7 @@ def run(config: dict[str, Any], output_dir: Path, repository_root: Path) -> pd.D
     )
     test_uniforms = np.random.default_rng(seed + 20_001).random(len(split.test))
     selected_features = json.dumps(dataset.feature_names)
-    code_version = _code_version(repository_root)
+    version = code_version(repository_root)
     result_rows: list[dict[str, Any]] = []
 
     for model_name, model_config in config["models"].items():
@@ -175,120 +114,36 @@ def run(config: dict[str, Any], output_dir: Path, repository_root: Path) -> pd.D
             seed=seed,
         )
         fit_seconds = time.perf_counter() - started
-        logits_tune = fitted.logits(dataset.features[split.tune])
-        logits_calibration = fitted.logits(dataset.features[split.calibration])
-        logits_test = fitted.logits(dataset.features[split.test])
-        labels_tune = dataset.labels[split.tune]
-        labels_calibration = dataset.labels[split.calibration]
-        labels_test = dataset.labels[split.test]
-        ts_result = tune_temperature(logits_tune, labels_tune, temperature_grid)
-
-        for score_name in conformal_config["scores"]:
-            confts_result = tune_confts(
-                logits_tune,
-                labels_tune,
-                alpha,
-                score_name,
-                temperature_grid,
-                seed=seed + 30_001,
-                threshold_fraction=float(
-                    config["temperature"].get("confts_threshold_fraction", 0.5)
-                ),
-                k_reg=raps_k_reg,
-                lambda_reg=raps_lambda,
-                reject_zero_probabilities=bool(
-                    config["temperature"].get("reject_zero_probabilities", True)
-                ),
-            )
-            scaling_candidates = (
-                ("base", 1.0, np.nan, np.nan, ()),
-                ("ts", ts_result.temperature, ts_result.nll, np.nan, ()),
-                (
-                    "confts",
-                    confts_result.temperature,
-                    np.nan,
-                    confts_result.loss,
-                    confts_result.rejected_temperatures,
-                ),
-            )
-            for scaling_name, temperature, tuning_nll, confts_loss, rejected in scaling_candidates:
-                probability_calibration = probabilities_from_logits(
-                    logits_calibration, temperature
-                )
-                probability_test = probabilities_from_logits(logits_test, temperature)
-                tau = calibrate_threshold(
-                    probability_calibration,
-                    labels_calibration,
-                    alpha,
-                    score_name,
-                    u_values=calibration_uniforms,
-                    k_reg=raps_k_reg,
-                    lambda_reg=raps_lambda,
-                )
-                prediction_set_result = evaluate_prediction_sets(
-                    probability_test,
-                    labels_test,
-                    tau,
-                    score_name,
-                    u_values=test_uniforms,
-                    k_reg=raps_k_reg,
-                    lambda_reg=raps_lambda,
-                )
-                classification = classification_metrics(
-                    probability_test, labels_test, ece_bins=ece_bins
-                )
-                conditional = conditional_coverage_metrics(
-                    prediction_set_result.included,
-                    labels_test,
-                    target_coverage=1 - alpha,
-                    min_sscv_stratum_size=min_sscv_size,
-                )
-                calibration_diagnostics = probability_diagnostics(
-                    probability_calibration
-                )
-                test_diagnostics = probability_diagnostics(probability_test)
-                result_rows.append(
-                    {
-                        "experiment": config["experiment_name"],
-                        "dataset": "controlled_multiclass",
-                        "model": model_name,
-                        "seed": seed,
-                        "split_id": split_identifier,
-                        "selected_features": selected_features,
-                        "n_features": len(dataset.feature_names),
-                        "scaling": scaling_name,
-                        "temperature": temperature,
-                        "score": score_name,
-                        "alpha": alpha,
-                        "raps_lambda": raps_lambda,
-                        "raps_k_reg": raps_k_reg,
-                        "threshold": tau,
-                        "accuracy": classification.accuracy,
-                        "macro_f1": classification.macro_f1,
-                        "nll": classification.nll,
-                        "ece": classification.ece,
-                        "coverage": prediction_set_result.coverage,
-                        "mean_size": prediction_set_result.mean_size,
-                        "median_size": prediction_set_result.median_size,
-                        "size_p90": prediction_set_result.size_p90,
-                        "empty_set_rate": prediction_set_result.empty_set_rate,
-                        "full_set_rate": prediction_set_result.full_set_rate,
-                        "sscv": conditional.sscv,
-                        "class_coverage_gap": conditional.class_coverage_gap,
-                        "class_coverage_max_deviation": conditional.class_coverage_max_deviation,
-                        "class_coverages": json.dumps(conditional.class_coverages),
-                        "tuning_nll": tuning_nll,
-                        "confts_loss": confts_loss,
-                        "rejected_temperatures": json.dumps(rejected),
-                        "calibration_zero_count": calibration_diagnostics.zero_count,
-                        "calibration_exactly_one_count": calibration_diagnostics.exactly_one_count,
-                        "test_zero_count": test_diagnostics.zero_count,
-                        "test_exactly_one_count": test_diagnostics.exactly_one_count,
-                        "test_mean_max_probability": test_diagnostics.mean_max_probability,
-                        "fit_seconds": fit_seconds,
-                        "code_version": code_version,
-                    }
-                )
+        evaluated = evaluate_logits(
+            logits_tune=fitted.logits(dataset.features[split.tune]),
+            logits_calibration=fitted.logits(dataset.features[split.calibration]),
+            logits_test=fitted.logits(dataset.features[split.test]),
+            labels_tune=dataset.labels[split.tune],
+            labels_calibration=dataset.labels[split.calibration],
+            labels_test=dataset.labels[split.test],
+            config=config,
+            calibration_uniforms=calibration_uniforms,
+            test_uniforms=test_uniforms,
+            seed=seed,
+        )
+        metadata = {
+            "experiment": config["experiment_name"],
+            "dataset": "controlled_multiclass",
+            "model": model_name,
+            "seed": seed,
+            "split_id": split_identifier,
+            "selected_features": selected_features,
+            "n_features": len(dataset.feature_names),
+        }
+        result_rows.extend(
+            {
+                **metadata,
+                **row,
+                "fit_seconds": fit_seconds,
+                "code_version": version,
+            }
+            for row in evaluated
+        )
 
     results = pd.DataFrame(result_rows)
     results.to_csv(output_dir / "baseline_results.csv", index=False)

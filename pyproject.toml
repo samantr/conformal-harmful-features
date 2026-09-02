@@ -7,6 +7,7 @@ name = "conformal-harmful-features"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
+  "matplotlib>=3.8",
   "numpy>=1.26",
   "pandas>=2.1",
   "PyYAML>=6.0",
@@ -23,4 +24,3 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-
