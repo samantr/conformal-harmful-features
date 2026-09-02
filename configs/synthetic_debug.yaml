@@ -2,23 +2,51 @@ experiment_name: synthetic_debug
 seed: 42
 dataset:
   n_samples: 12000
-  n_features: 20
-  n_informative: 14
-  n_redundant: 4
   n_classes: 10
-  class_sep: 1.5
-  flip_y: 0.01
+  features:
+    strong: 6
+    weak: 4
+    redundant: 4
+    noise: 6
+  strong_signal: 1.0
+  weak_signal: 0.25
+  redundant_noise: 0.15
 split:
   train: 6000
   tune: 2000
   calibration: 2000
   test: 2000
+models:
+  logistic_regression:
+    type: logistic_regression
+    C: 1.0
+    max_iter: 500
+  small_neural_network:
+    type: mlp
+    hidden_layers: [64, 32]
+    activation: relu
+    weight_decay: 0.0001
+    batch_size: 128
+    learning_rate: 0.001
+    max_epochs: 200
+    early_stopping: true
+    validation_fraction: 0.1
+    patience: 15
+temperature:
+  grid: [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.4, 1.6, 1.8, 2.0, 2.5, 3.0]
+  confts_threshold_fraction: 0.5
+  reject_zero_probabilities: true
 conformal:
   alpha: 0.10
   scores: [aps, raps]
   raps_lambda: 0.001
   raps_k_reg: 1
+metrics:
+  ece_bins: 15
+  min_sscv_stratum_size: 25
+stability:
+  max_coverage_deviation: 0.03
+  minimum_accuracy: 0.50
 selection:
   max_accuracy_loss: 0.01
   max_coverage_deviation: 0.01
-

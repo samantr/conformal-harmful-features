@@ -4,17 +4,17 @@ Research code for testing whether features with little classification value can 
 
 ## Current milestone
 
-**Phase 0 - Freeze the reproduction foundation: COMPLETE.** The original learning/reproduction scripts remain unchanged in `reproduction/`. Reusable and tested implementations of Base/TS/ConfTS, randomized APS/RAPS, the finite-sample conformal quantile, numerical diagnostics, and split artifacts now live in `src/chf/`.
+**Phase 1 - Controlled synthetic data: COMPLETE.** The repository now generates auditable strong, weak, redundant, and pure-noise features; trains multinomial logistic regression and a small neural network; and evaluates the full Base/TS/ConfTS x APS/RAPS baseline with classification, calibration, efficiency, conditional-coverage, and numerical-stability metrics.
 
-Next: **Phase 1 - Controlled synthetic data**. Complete the full-feature Base/TS/ConfTS x APS/RAPS baseline with logistic regression and a small neural network. Do not begin feature ranking or ablation until that baseline is stable.
+Next: **Phase 2 - Single-feature interventions**. Run retrain ablation and separately labeled fixed-model masking/permutation diagnostics without using calibration or test data for feature decisions.
 
 ## Stage tracker
 
 | Stage | Status |
 |---|---|
 | Phase 0 - Freeze reproduction foundation | ✅ Complete |
-| Phase 1 - Controlled synthetic data | ⏭️ Next |
-| Phase 2 - Single-feature interventions | Not started |
+| Phase 1 - Controlled synthetic data | ✅ Complete |
+| Phase 2 - Single-feature interventions | ⏭️ Next |
 | Phase 3 - Define conformal harm | Not started |
 | Phase 4 - Progressive subset selection | Not started |
 | Phase 5 - Required baselines | Not started |
@@ -53,9 +53,10 @@ pytest
 python experiments/01_synthetic_baseline.py --config configs/synthetic_debug.yaml
 ```
 
-The first experiment currently verifies data generation, split isolation, and persistence of exact split indices and their seed. The reusable conformal/scaling core is ready for the Phase 1 full-feature baseline.
+The first experiment generates the controlled 10-class/20-feature dataset, verifies its known feature roles using training data only, persists the exact four-way split, trains both model families, and writes all 12 Base/TS/ConfTS x APS/RAPS result rows to `baseline_results.csv`.
 
 Phase 0 validation details and tolerances are recorded in [`paper/phase-0-validation.md`](paper/phase-0-validation.md).
+Phase 1 protocol, metrics, results, and stability checks are recorded in [`paper/phase-1-validation.md`](paper/phase-1-validation.md).
 
 ## Planned experiment sequence
 
