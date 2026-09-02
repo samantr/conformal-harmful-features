@@ -1,0 +1,24 @@
+experiment_name: synthetic_debug
+seed: 42
+dataset:
+  n_samples: 12000
+  n_features: 20
+  n_informative: 14
+  n_redundant: 4
+  n_classes: 10
+  class_sep: 1.5
+  flip_y: 0.01
+split:
+  train: 6000
+  tune: 2000
+  calibration: 2000
+  test: 2000
+conformal:
+  alpha: 0.10
+  scores: [aps, raps]
+  raps_lambda: 0.001
+  raps_k_reg: 1
+selection:
+  max_accuracy_loss: 0.01
+  max_coverage_deviation: 0.01
+
