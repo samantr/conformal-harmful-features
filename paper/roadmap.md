@@ -2,6 +2,11 @@
 
 ## Implementation and Paper Roadmap
 
+## Status
+
+- ✅ **Phase 0 - Freeze the reproduction foundation:** complete; see [`phase-0-validation.md`](phase-0-validation.md).
+- ⏭️ **Phase 1 - Controlled synthetic data:** next.
+
 **Working title:** *Conformal-Harmful Features: Feature Selection for Efficient Adaptive Prediction Sets*
 
 **Scope:** Tabular multiclass classification using APS/RAPS with Base (`T=1`), ordinary temperature scaling (TS), and Conformal Temperature Scaling (ConfTS).
@@ -51,13 +56,13 @@ A smaller set alone is not success. A valid result must:
 
 ### Phase 0 - Freeze the reproduction foundation
 
-- Preserve existing reproduction scripts and saved results.
-- Modularize Base/TS/ConfTS and APS/RAPS only after regression tests pass.
-- Verify randomized APS/RAPS and the finite-sample conformal quantile with hand-calculated cases.
-- Save split indices and random seeds.
-- Log zero-probability counts and probability saturation.
+- [x] Preserve existing reproduction scripts and saved results.
+- [x] Modularize Base/TS/ConfTS and APS/RAPS only after regression tests pass.
+- [x] Verify randomized APS/RAPS and the finite-sample conformal quantile with hand-calculated cases.
+- [x] Save split indices and random seeds.
+- [x] Log zero-probability counts and probability saturation.
 
-**Exit:** Modular code matches the reproduction within a documented tolerance.
+**Exit: PASSED.** Modular code matches the reproduction within the tolerances documented in [`phase-0-validation.md`](phase-0-validation.md).
 
 ### Phase 1 - Controlled synthetic data
 
@@ -261,4 +266,3 @@ Safe initial wording:
 Avoid claiming to be the first feature-selection method for conformal prediction.
 
 Xi et al. intervene after logits are produced and optimize a post-hoc temperature for conformal efficiency. This project moves upstream to test whether input features create avoidable conformal inefficiency and whether intervention is complementary to ConfTS. Preserve the base paper's held-out tuning, fresh conformal calibration, APS/RAPS metrics, and numerical-stability checks.
-

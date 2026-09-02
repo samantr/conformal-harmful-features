@@ -4,7 +4,23 @@ Research code for testing whether features with little classification value can 
 
 ## Current milestone
 
-Phase 0 is scaffolded. The original learning/reproduction scripts are preserved unchanged in `reproduction/`. The reusable package begins in `src/chf/`, with tests protecting the four-way split and finite-sample conformal quantile.
+**Phase 0 - Freeze the reproduction foundation: COMPLETE.** The original learning/reproduction scripts remain unchanged in `reproduction/`. Reusable and tested implementations of Base/TS/ConfTS, randomized APS/RAPS, the finite-sample conformal quantile, numerical diagnostics, and split artifacts now live in `src/chf/`.
+
+Next: **Phase 1 - Controlled synthetic data**. Complete the full-feature Base/TS/ConfTS x APS/RAPS baseline with logistic regression and a small neural network. Do not begin feature ranking or ablation until that baseline is stable.
+
+## Stage tracker
+
+| Stage | Status |
+|---|---|
+| Phase 0 - Freeze reproduction foundation | ✅ Complete |
+| Phase 1 - Controlled synthetic data | ⏭️ Next |
+| Phase 2 - Single-feature interventions | Not started |
+| Phase 3 - Define conformal harm | Not started |
+| Phase 4 - Progressive subset selection | Not started |
+| Phase 5 - Required baselines | Not started |
+| Phase 6 - Interaction with scaling | Not started |
+| Phase 7 - Real datasets | Not started |
+| Phase 8 - Robustness and statistics | Not started |
 
 ## Scientific rule
 
@@ -37,7 +53,9 @@ pytest
 python experiments/01_synthetic_baseline.py --config configs/synthetic_debug.yaml
 ```
 
-The first experiment currently verifies data generation and split isolation. Next, port the verified Base/TS/ConfTS and randomized APS/RAPS functions behind tested interfaces before running feature ablations.
+The first experiment currently verifies data generation, split isolation, and persistence of exact split indices and their seed. The reusable conformal/scaling core is ready for the Phase 1 full-feature baseline.
+
+Phase 0 validation details and tolerances are recorded in [`paper/phase-0-validation.md`](paper/phase-0-validation.md).
 
 ## Planned experiment sequence
 
@@ -47,4 +65,3 @@ The first experiment currently verifies data generation and split isolation. Nex
 4. `04_harm_ranking.py`: constrained and Pareto rankings using tuning data.
 5. `05_progressive_selection.py`: freeze a subset, recalibrate, evaluate once.
 6. `06_real_data_benchmarks.py`: paired-seed comparison against standard baselines.
-
