@@ -50,3 +50,17 @@ stability:
 selection:
   max_accuracy_loss: 0.01
   max_coverage_deviation: 0.01
+harm:
+  primary_formulation: constrained
+  selection_resamples: 5
+  crossfit_folds: 4
+  scale_share_of_remainder: 0.60
+  constraints:
+    max_accuracy_loss: 0.01
+    max_coverage_shortfall: 0.03
+  weights:
+    beta: 4.0
+    gamma: 10.0
+    eta: 1.0
+  stability:
+    min_primary_mean_rank_correlation: 0.50

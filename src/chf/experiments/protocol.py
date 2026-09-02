@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import numpy as np
+import pandas as pd
 
 from chf.conformal import calibrate_threshold, evaluate_prediction_sets
 from chf.data import ControlledSyntheticDataset, make_controlled_multiclass
@@ -14,6 +15,23 @@ from chf.scaling import (
     probability_diagnostics,
     tune_confts,
     tune_temperature,
+)
+
+
+REFERENCE_METRICS = (
+    "accuracy",
+    "macro_f1",
+    "nll",
+    "ece",
+    "coverage",
+    "mean_size",
+    "median_size",
+    "size_p90",
+    "empty_set_rate",
+    "full_set_rate",
+    "sscv",
+    "class_coverage_gap",
+    "class_coverage_max_deviation",
 )
 
 
@@ -64,6 +82,50 @@ def dataset_from_config(config: Mapping[str, Any]) -> ControlledSyntheticDataset
         weak_signal=float(dataset_config.get("weak_signal", 0.25)),
         redundant_noise=float(dataset_config.get("redundant_noise", 0.15)),
     )
+
+
+def attach_reference_deltas(
+    results: pd.DataFrame,
+    *,
+    key_columns: tuple[str, ...] = ("model", "scaling", "score"),
+) -> pd.DataFrame:
+    """Attach matched reference values and signed intervention deltas.
+
+    ``key_columns`` identifies the experimental conditions that must be paired.
+    Phase 2 uses model/scaling/score, while resampled Phase 3 evidence also adds
+    the tuning-resample identifier. Positive ``mean_size_reduction`` means that
+    the intervention made prediction sets smaller.
+    """
+    required = {
+        "intervention",
+        "alpha",
+        *key_columns,
+        *REFERENCE_METRICS,
+    }
+    missing = required.difference(results.columns)
+    if missing:
+        raise ValueError(f"results are missing required columns: {sorted(missing)}")
+
+    reference = results.loc[results["intervention"] == "reference"].copy()
+    keys = list(key_columns)
+    if reference.duplicated(keys).any():
+        raise RuntimeError(f"reference rows are not unique by {keys}")
+    reference = reference[keys + list(REFERENCE_METRICS)].rename(
+        columns={metric: f"reference_{metric}" for metric in REFERENCE_METRICS}
+    )
+    merged = results.merge(reference, on=keys, how="left", validate="many_to_one")
+    reference_columns = [f"reference_{metric}" for metric in REFERENCE_METRICS]
+    if merged[reference_columns].isna().any().any():
+        raise RuntimeError("an intervention row has no matching reference")
+    for metric in REFERENCE_METRICS:
+        merged[f"{metric}_delta"] = merged[metric] - merged[f"reference_{metric}"]
+    merged["accuracy_loss"] = -merged["accuracy_delta"]
+    merged["macro_f1_loss"] = -merged["macro_f1_delta"]
+    merged["mean_size_reduction"] = -merged["mean_size_delta"]
+    merged["coverage_target_deviation"] = (
+        merged["coverage"] - (1.0 - merged["alpha"])
+    ).abs()
+    return merged
 
 
 def evaluate_logits(

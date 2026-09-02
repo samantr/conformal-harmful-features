@@ -13,3 +13,14 @@ Phase 2 writes the following files below the configured experiment directory:
 - `ablation_protocol.json` and `masking_protocol.json`: executable protocol checks.
 
 Generated outputs are intentionally ignored by Git. The validation records under `paper/` preserve the phase-level evidence and conclusions.
+
+Phase 3 additionally writes:
+
+- `harm_tuning_evidence.csv`: fold-level tuning-only reference and ablation evidence.
+- `harm_resample_evidence.csv`: cross-fitted evidence aggregated within each selection seed.
+- `harm_rankings.csv`: constrained, weighted, and Pareto results per feature/pipeline.
+- `harm_resample_rankings.csv` and `harm_rank_stability.csv`: rank reproducibility evidence.
+- `harm_formulation_agreement.csv`: pairwise agreement among the three definitions.
+- `harm_consensus.csv`: cross-model/scaling/score descriptive consensus.
+- `harm_formulations.png`: Base APS accuracy-efficiency view with constrained candidates.
+- `harm_protocol.json`: leakage, row-count, reference-pairing, and stability checks.

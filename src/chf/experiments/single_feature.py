@@ -11,23 +11,13 @@ from chf.data import make_four_way_split, save_split_artifact
 from chf.interventions import intervene_feature
 from chf.models import FittedClassifier, fit_classifier
 
-from .protocol import code_version, dataset_from_config, evaluate_logits, split_id
-
-
-REFERENCE_METRICS = (
-    "accuracy",
-    "macro_f1",
-    "nll",
-    "ece",
-    "coverage",
-    "mean_size",
-    "median_size",
-    "size_p90",
-    "empty_set_rate",
-    "full_set_rate",
-    "sscv",
-    "class_coverage_gap",
-    "class_coverage_max_deviation",
+from .protocol import (
+    REFERENCE_METRICS,
+    attach_reference_deltas,
+    code_version,
+    dataset_from_config,
+    evaluate_logits,
+    split_id,
 )
 
 
@@ -64,7 +54,7 @@ def run_retrain_ablation(
                 flush=True,
             )
 
-    results = _attach_reference_deltas(pd.DataFrame(rows))
+    results = attach_reference_deltas(pd.DataFrame(rows))
     summary = _summarize(results, config)
     _write_outputs(
         results,
@@ -173,7 +163,7 @@ def run_masking_sensitivity(
                 flush=True,
             )
 
-    results = _attach_reference_deltas(pd.DataFrame(rows))
+    results = attach_reference_deltas(pd.DataFrame(rows))
     summary = _summarize(results, config)
     _write_outputs(
         results,
@@ -332,29 +322,6 @@ class _ExperimentContext:
             "code_version": self.version,
         }
         return [{**metadata, **row} for row in evaluated]
-
-
-def _attach_reference_deltas(results: pd.DataFrame) -> pd.DataFrame:
-    reference = results.loc[results["intervention"] == "reference"].copy()
-    key_columns = ["model", "scaling", "score"]
-    if reference.duplicated(key_columns).any():
-        raise RuntimeError("reference rows are not unique by model/scaling/score")
-    reference = reference[key_columns + list(REFERENCE_METRICS)].rename(
-        columns={metric: f"reference_{metric}" for metric in REFERENCE_METRICS}
-    )
-    merged = results.merge(reference, on=key_columns, how="left", validate="many_to_one")
-    reference_columns = [f"reference_{metric}" for metric in REFERENCE_METRICS]
-    if merged[reference_columns].isna().any().any():
-        raise RuntimeError("an intervention row has no matching reference")
-    for metric in REFERENCE_METRICS:
-        merged[f"{metric}_delta"] = merged[metric] - merged[f"reference_{metric}"]
-    merged["accuracy_loss"] = -merged["accuracy_delta"]
-    merged["macro_f1_loss"] = -merged["macro_f1_delta"]
-    merged["mean_size_reduction"] = -merged["mean_size_delta"]
-    merged["coverage_target_deviation"] = (
-        merged["coverage"] - (1.0 - merged["alpha"])
-    ).abs()
-    return merged
 
 
 def _summarize(results: pd.DataFrame, config: Mapping[str, Any]) -> pd.DataFrame:

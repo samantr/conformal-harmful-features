@@ -5,7 +5,10 @@
 ## Status
 
 - ✅ **Phase 0 - Freeze the reproduction foundation:** complete; see [`phase-0-validation.md`](phase-0-validation.md).
-- ⏭️ **Phase 1 - Controlled synthetic data:** next.
+- ✅ **Phase 1 - Controlled synthetic data:** complete; see [`phase-1-validation.md`](phase-1-validation.md).
+- ✅ **Phase 2 - Single-feature interventions:** complete; see [`phase-2-validation.md`](phase-2-validation.md).
+- ✅ **Phase 3 - Define conformal harm:** complete; see [`phase-3-validation.md`](phase-3-validation.md).
+- ⏭️ **Phase 4 - Progressive subset selection:** next.
 
 **Working title:** *Conformal-Harmful Features: Feature Selection for Efficient Adaptive Prediction Sets*
 
@@ -112,7 +115,10 @@ Weights must be tuned without touching final calibration/test data.
 
 Treat accuracy, set size, and conditional violation as separate objectives. Prefer constrained or Pareto reporting; simple ratios are unstable when accuracy loss is near zero.
 
-**Exit:** The definition does not reward coverage failure or severe accuracy loss and remains stable across seeds.
+**Exit: PASSED.** Constrained efficiency is the primary definition. It uses
+tuning-only cross-fitted evidence, requires positive efficiency gain, enforces
+accuracy and marginal-coverage safeguards, and passes the selection-resample
+stability gate documented in [`phase-3-validation.md`](phase-3-validation.md).
 
 ### Phase 4 - Progressive subset selection
 
