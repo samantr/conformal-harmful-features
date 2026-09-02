@@ -24,3 +24,11 @@ Phase 3 additionally writes:
 - `harm_consensus.csv`: cross-model/scaling/score descriptive consensus.
 - `harm_formulations.png`: Base APS accuracy-efficiency view with constrained candidates.
 - `harm_protocol.json`: leakage, row-count, reference-pairing, and stability checks.
+
+Phase 4 additionally writes:
+
+- `progressive_pipeline_paths.csv`: tuning-only progressive paths for the preregistered selection pipeline.
+- `progressive_consensus_paths.csv`: one row per subset step with the frozen-step flag.
+- `progressive_final_results.csv`: all Base/TS/ConfTS x APS/RAPS results after fresh outer calibration.
+- `progressive_pareto_curves.png`: accuracy-size and conditional-violation-size paths.
+- `progressive_protocol.json`: partition-use, subset-freeze, row-count, and numerical checks.

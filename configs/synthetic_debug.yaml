@@ -64,3 +64,10 @@ harm:
     eta: 1.0
   stability:
     min_primary_mean_rank_correlation: 0.50
+progressive_selection:
+  scaling: base
+  score: aps
+  selection_resamples: 5
+  crossfit_folds: 4
+  max_removals: 19
+  require_positive_incremental_gain: true

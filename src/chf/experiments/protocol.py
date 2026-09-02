@@ -140,6 +140,8 @@ def evaluate_logits(
     calibration_uniforms: np.ndarray,
     test_uniforms: np.ndarray,
     seed: int,
+    included_scores: tuple[str, ...] | None = None,
+    included_scalings: tuple[str, ...] | None = None,
 ) -> list[dict[str, Any]]:
     """Evaluate one fitted-model/data combination under the shared CP protocol.
 
@@ -156,37 +158,55 @@ def evaluate_logits(
     )
     raps_lambda = float(conformal_config["raps_lambda"])
     raps_k_reg = int(conformal_config["raps_k_reg"])
-    ts_result = tune_temperature(logits_tune, labels_tune, temperature_grid)
+    score_names = included_scores or tuple(conformal_config["scores"])
+    unknown_scores = set(score_names).difference(conformal_config["scores"])
+    if unknown_scores:
+        raise ValueError(f"unknown requested scores: {sorted(unknown_scores)}")
+    scaling_names = included_scalings or ("base", "ts", "confts")
+    unknown_scalings = set(scaling_names).difference({"base", "ts", "confts"})
+    if unknown_scalings:
+        raise ValueError(
+            f"unknown requested scaling methods: {sorted(unknown_scalings)}"
+        )
+    ts_result = (
+        tune_temperature(logits_tune, labels_tune, temperature_grid)
+        if "ts" in scaling_names
+        else None
+    )
     rows: list[dict[str, Any]] = []
 
-    for score_name in conformal_config["scores"]:
-        confts_result = tune_confts(
-            logits_tune,
-            labels_tune,
-            alpha,
-            score_name,
-            temperature_grid,
-            seed=seed + 30_001,
-            threshold_fraction=float(
-                config["temperature"].get("confts_threshold_fraction", 0.5)
-            ),
-            k_reg=raps_k_reg,
-            lambda_reg=raps_lambda,
-            reject_zero_probabilities=bool(
-                config["temperature"].get("reject_zero_probabilities", True)
-            ),
+    for score_name in score_names:
+        confts_result = (
+            tune_confts(
+                logits_tune,
+                labels_tune,
+                alpha,
+                score_name,
+                temperature_grid,
+                seed=seed + 30_001,
+                threshold_fraction=float(
+                    config["temperature"].get("confts_threshold_fraction", 0.5)
+                ),
+                k_reg=raps_k_reg,
+                lambda_reg=raps_lambda,
+                reject_zero_probabilities=bool(
+                    config["temperature"].get("reject_zero_probabilities", True)
+                ),
+            )
+            if "confts" in scaling_names
+            else None
         )
-        scaling_candidates = (
-            ("base", 1.0, np.nan, np.nan, ()),
-            ("ts", ts_result.temperature, ts_result.nll, np.nan, ()),
-            (
-                "confts",
-                confts_result.temperature,
-                np.nan,
-                confts_result.loss,
+        candidates = {
+            "base": ("base", 1.0, np.nan, np.nan, ()),
+            "ts": (
+                "ts", ts_result.temperature, ts_result.nll, np.nan, ()
+            ) if ts_result is not None else None,
+            "confts": (
+                "confts", confts_result.temperature, np.nan, confts_result.loss,
                 confts_result.rejected_temperatures,
-            ),
-        )
+            ) if confts_result is not None else None,
+        }
+        scaling_candidates = tuple(candidates[name] for name in scaling_names)
         for (
             scaling_name,
             temperature,

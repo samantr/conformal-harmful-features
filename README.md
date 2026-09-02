@@ -4,9 +4,9 @@ Research code for testing whether features with little classification value can 
 
 ## Current milestone
 
-**Phase 3 - Define conformal harm: COMPLETE.** Constrained-efficiency, weighted, and validity-gated Pareto formulations are computed from repeated cross-fitted evidence inside the tuning partition. The constrained formulation is the primary definition; it is more stable than the Pareto ordering and never uses final calibration or test data for ranking.
+**Phase 4 - Progressive subset selection: COMPLETE.** One-shot and recursive constrained-efficiency paths use repeated cross-fitted Base APS evidence inside the tuning partition. Subset size is frozen before one fresh outer-calibration threshold and one test evaluation per final pipeline.
 
-Next: **Phase 4 - Progressive subset selection**. Remove features using the constrained tuning-only ranking, freeze the chosen subset, recalibrate once, and evaluate once on test data.
+Next: **Phase 5 - Required baselines**. Compare the proposed paths with random removal, mutual information, permutation importance, RFE, SHAP where feasible, and the closest reproducible conformal feature-selection method.
 
 ## Stage tracker
 
@@ -16,8 +16,8 @@ Next: **Phase 4 - Progressive subset selection**. Remove features using the cons
 | Phase 1 - Controlled synthetic data | ✅ Complete |
 | Phase 2 - Single-feature interventions | ✅ Complete |
 | Phase 3 - Define conformal harm | ✅ Complete |
-| Phase 4 - Progressive subset selection | ⏭️ Next |
-| Phase 5 - Required baselines | Not started |
+| Phase 4 - Progressive subset selection | ✅ Complete |
+| Phase 5 - Required baselines | ⏭️ Next |
 | Phase 6 - Interaction with scaling | Not started |
 | Phase 7 - Real datasets | Not started |
 | Phase 8 - Robustness and statistics | Not started |
@@ -54,6 +54,7 @@ python experiments/01_synthetic_baseline.py --config configs/synthetic_debug.yam
 python experiments/02_single_feature_ablation.py --config configs/synthetic_debug.yaml
 python experiments/03_masking_sensitivity.py --config configs/synthetic_debug.yaml
 python experiments/04_harm_ranking.py --config configs/synthetic_debug.yaml
+python experiments/05_progressive_selection.py --config configs/synthetic_debug.yaml
 ```
 
 The first experiment generates the controlled 10-class/20-feature dataset, verifies its known feature roles using training data only, persists the exact four-way split, trains both model families, and writes all 12 Base/TS/ConfTS x APS/RAPS result rows to `baseline_results.csv`.
@@ -62,6 +63,7 @@ Phase 0 validation details and tolerances are recorded in [`paper/phase-0-valida
 Phase 1 protocol, metrics, results, and stability checks are recorded in [`paper/phase-1-validation.md`](paper/phase-1-validation.md).
 Phase 2 intervention protocols, exploratory results, and decision gate are recorded in [`paper/phase-2-validation.md`](paper/phase-2-validation.md).
 Phase 3 definitions, tuning-only cross-fitting protocol, stability results, and primary-method decision are recorded in [`paper/phase-3-validation.md`](paper/phase-3-validation.md).
+Phase 4 one-shot/recursive paths, frozen-subset results, and untouched-test findings are recorded in [`paper/phase-4-validation.md`](paper/phase-4-validation.md).
 
 ## Planned experiment sequence
 
