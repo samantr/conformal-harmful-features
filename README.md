@@ -4,9 +4,13 @@ Research code for testing whether features with little classification value can 
 
 ## Current milestone
 
-**Phase 4 - Progressive subset selection: COMPLETE.** One-shot and recursive constrained-efficiency paths use repeated cross-fitted Base APS evidence inside the tuning partition. Subset size is frozen before one fresh outer-calibration threshold and one test evaluation per final pipeline.
+**Phase 5 - Required baselines: COMPLETE.** All-features, repeated random,
+mutual-information, permutation-importance, RFE, SHAP, and CRFE selectors are
+compared with both proposed Phase 4 paths at identical frozen subset sizes under
+one fresh Base APS calibration.
 
-Next: **Phase 5 - Required baselines**. Compare the proposed paths with random removal, mutual information, permutation importance, RFE, SHAP where feasible, and the closest reproducible conformal feature-selection method.
+Next: **Phase 6 - Interaction with scaling**. Compare Base, TS, and ConfTS with
+APS/RAPS for all-features, standard-selection, and proposed-selection variants.
 
 ## Stage tracker
 
@@ -17,8 +21,8 @@ Next: **Phase 5 - Required baselines**. Compare the proposed paths with random r
 | Phase 2 - Single-feature interventions | ✅ Complete |
 | Phase 3 - Define conformal harm | ✅ Complete |
 | Phase 4 - Progressive subset selection | ✅ Complete |
-| Phase 5 - Required baselines | ⏭️ Next |
-| Phase 6 - Interaction with scaling | Not started |
+| Phase 5 - Required baselines | ✅ Complete |
+| Phase 6 - Interaction with scaling | ⏭️ Next |
 | Phase 7 - Real datasets | Not started |
 | Phase 8 - Robustness and statistics | Not started |
 
@@ -48,13 +52,14 @@ outputs/        generated tables, figures and logs (not source data)
 ## Start
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,baselines]"
 pytest
 python experiments/01_synthetic_baseline.py --config configs/synthetic_debug.yaml
 python experiments/02_single_feature_ablation.py --config configs/synthetic_debug.yaml
 python experiments/03_masking_sensitivity.py --config configs/synthetic_debug.yaml
 python experiments/04_harm_ranking.py --config configs/synthetic_debug.yaml
 python experiments/05_progressive_selection.py --config configs/synthetic_debug.yaml
+python experiments/06_required_baselines.py --config configs/synthetic_debug.yaml
 ```
 
 The first experiment generates the controlled 10-class/20-feature dataset, verifies its known feature roles using training data only, persists the exact four-way split, trains both model families, and writes all 12 Base/TS/ConfTS x APS/RAPS result rows to `baseline_results.csv`.
@@ -64,6 +69,7 @@ Phase 1 protocol, metrics, results, and stability checks are recorded in [`paper
 Phase 2 intervention protocols, exploratory results, and decision gate are recorded in [`paper/phase-2-validation.md`](paper/phase-2-validation.md).
 Phase 3 definitions, tuning-only cross-fitting protocol, stability results, and primary-method decision are recorded in [`paper/phase-3-validation.md`](paper/phase-3-validation.md).
 Phase 4 one-shot/recursive paths, frozen-subset results, and untouched-test findings are recorded in [`paper/phase-4-validation.md`](paper/phase-4-validation.md).
+Phase 5 matched-size baseline protocols and results are recorded in [`paper/phase-5-validation.md`](paper/phase-5-validation.md).
 
 ## Planned experiment sequence
 
@@ -72,4 +78,4 @@ Phase 4 one-shot/recursive paths, frozen-subset results, and untouched-test find
 3. `03_masking_sensitivity.py`: fixed-model masking/permutation diagnostic.
 4. `04_harm_ranking.py`: constrained and Pareto rankings using tuning data.
 5. `05_progressive_selection.py`: freeze a subset, recalibrate, evaluate once.
-6. `06_real_data_benchmarks.py`: paired-seed comparison against standard baselines.
+6. `06_required_baselines.py`: matched-size comparison against required baselines.

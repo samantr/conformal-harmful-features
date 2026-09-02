@@ -17,6 +17,14 @@ from .progressive import (
     non_dominated_steps,
     rank_progressive_candidates,
 )
+from .baselines import (
+    crfe_order,
+    descending_order,
+    mutual_information_order,
+    permutation_order,
+    rfe_order,
+    shap_order,
+)
 
 __all__ = [
     "HarmConstraints",
@@ -34,4 +42,10 @@ __all__ = [
     "choose_subset_size",
     "non_dominated_steps",
     "rank_progressive_candidates",
+    "crfe_order",
+    "descending_order",
+    "mutual_information_order",
+    "permutation_order",
+    "rfe_order",
+    "shap_order",
 ]

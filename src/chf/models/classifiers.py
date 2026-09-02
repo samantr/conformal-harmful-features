@@ -26,6 +26,15 @@ class FittedClassifier:
         # log(p) is a valid set of logits because softmax(log(p)) == p.
         return np.log(np.clip(probabilities, tiny, 1.0))
 
+    def predict_proba(self, features: np.ndarray) -> np.ndarray:
+        logits = self.logits(features)
+        shifted = logits - logits.max(axis=1, keepdims=True)
+        exponentials = np.exp(shifted)
+        return exponentials / exponentials.sum(axis=1, keepdims=True)
+
+    def predict(self, features: np.ndarray) -> np.ndarray:
+        return self.estimator.classes_[np.argmax(self.predict_proba(features), axis=1)]
+
 
 def fit_classifier(
     features_train: np.ndarray,

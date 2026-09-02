@@ -71,3 +71,10 @@ progressive_selection:
   crossfit_folds: 4
   max_removals: 19
   require_positive_incremental_gain: true
+baselines:
+  random_repetitions: 10
+  permutation_repeats: 10
+  crfe_lambda: 0.5
+  shap_background_size: 30
+  shap_evaluation_size: 20
+  shap_max_evaluations: 41

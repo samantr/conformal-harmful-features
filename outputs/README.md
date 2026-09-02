@@ -32,3 +32,11 @@ Phase 4 additionally writes:
 - `progressive_final_results.csv`: all Base/TS/ConfTS x APS/RAPS results after fresh outer calibration.
 - `progressive_pareto_curves.png`: accuracy-size and conditional-violation-size paths.
 - `progressive_protocol.json`: partition-use, subset-freeze, row-count, and numerical checks.
+
+Phase 5 additionally writes:
+
+- `baseline_selections.csv`: frozen subsets, ranking sources, seeds, and feature scores.
+- `baseline_final_results.csv`: one final Base APS result for every frozen subset.
+- `baseline_summary.csv`: repeated-random aggregates and deterministic-method results.
+- `baseline_protocol.json`: method presence, matched-size, partition-use, and numerical checks.
+- `proposed_selection/`: auditable tuning-only Phase 4 rerun used to freeze the proposed subsets.

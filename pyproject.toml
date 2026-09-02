@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+baselines = ["shap>=0.46"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
