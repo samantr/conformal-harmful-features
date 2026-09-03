@@ -4,13 +4,13 @@ Research code for testing whether features with little classification value can 
 
 ## Current milestone
 
-**Phase 5 - Required baselines: COMPLETE.** All-features, repeated random,
-mutual-information, permutation-importance, RFE, SHAP, and CRFE selectors are
-compared with both proposed Phase 4 paths at identical frozen subset sizes under
-one fresh Base APS calibration.
+**Phase 6 - Interaction with scaling: COMPLETE.** Every deterministic Phase 5
+subset is evaluated under the full Base/TS/ConfTS x APS/RAPS factorial, with
+paired randomization and a difference-in-differences decomposition of feature,
+scaling, and interaction gains.
 
-Next: **Phase 6 - Interaction with scaling**. Compare Base, TS, and ConfTS with
-APS/RAPS for all-features, standard-selection, and proposed-selection variants.
+Next: **Phase 7 - Real datasets**. Transfer the complete leakage-safe protocol
+to Dry Bean first, followed by the remaining preregistered tabular datasets.
 
 ## Stage tracker
 
@@ -22,8 +22,8 @@ APS/RAPS for all-features, standard-selection, and proposed-selection variants.
 | Phase 3 - Define conformal harm | ✅ Complete |
 | Phase 4 - Progressive subset selection | ✅ Complete |
 | Phase 5 - Required baselines | ✅ Complete |
-| Phase 6 - Interaction with scaling | ⏭️ Next |
-| Phase 7 - Real datasets | Not started |
+| Phase 6 - Interaction with scaling | ✅ Complete |
+| Phase 7 - Real datasets | ⏭️ Next |
 | Phase 8 - Robustness and statistics | Not started |
 
 ## Scientific rule
@@ -60,6 +60,7 @@ python experiments/03_masking_sensitivity.py --config configs/synthetic_debug.ya
 python experiments/04_harm_ranking.py --config configs/synthetic_debug.yaml
 python experiments/05_progressive_selection.py --config configs/synthetic_debug.yaml
 python experiments/06_required_baselines.py --config configs/synthetic_debug.yaml
+python experiments/07_scaling_interaction.py --config configs/synthetic_debug.yaml
 ```
 
 The first experiment generates the controlled 10-class/20-feature dataset, verifies its known feature roles using training data only, persists the exact four-way split, trains both model families, and writes all 12 Base/TS/ConfTS x APS/RAPS result rows to `baseline_results.csv`.
@@ -70,6 +71,7 @@ Phase 2 intervention protocols, exploratory results, and decision gate are recor
 Phase 3 definitions, tuning-only cross-fitting protocol, stability results, and primary-method decision are recorded in [`paper/phase-3-validation.md`](paper/phase-3-validation.md).
 Phase 4 one-shot/recursive paths, frozen-subset results, and untouched-test findings are recorded in [`paper/phase-4-validation.md`](paper/phase-4-validation.md).
 Phase 5 matched-size baseline protocols and results are recorded in [`paper/phase-5-validation.md`](paper/phase-5-validation.md).
+Phase 6 scaling-factorial protocol, interaction decomposition, and results are recorded in [`paper/phase-6-validation.md`](paper/phase-6-validation.md).
 
 ## Planned experiment sequence
 
@@ -79,3 +81,4 @@ Phase 5 matched-size baseline protocols and results are recorded in [`paper/phas
 4. `04_harm_ranking.py`: constrained and Pareto rankings using tuning data.
 5. `05_progressive_selection.py`: freeze a subset, recalibrate, evaluate once.
 6. `06_required_baselines.py`: matched-size comparison against required baselines.
+7. `07_scaling_interaction.py`: Base/TS/ConfTS x APS/RAPS interaction analysis.

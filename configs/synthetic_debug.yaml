@@ -78,3 +78,14 @@ baselines:
   shap_background_size: 30
   shap_evaluation_size: 20
   shap_max_evaluations: 41
+scaling_interaction:
+  methods:
+    - all_features
+    - mutual_information
+    - permutation_importance
+    - rfe
+    - shap
+    - crfe
+    - conformal_harm_one_shot
+    - conformal_harm_recursive
+  descriptive_interaction_tolerance: 0.01

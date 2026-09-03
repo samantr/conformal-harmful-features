@@ -40,3 +40,12 @@ Phase 5 additionally writes:
 - `baseline_summary.csv`: repeated-random aggregates and deterministic-method results.
 - `baseline_protocol.json`: method presence, matched-size, partition-use, and numerical checks.
 - `proposed_selection/`: auditable tuning-only Phase 4 rerun used to freeze the proposed subsets.
+
+Phase 6 additionally writes:
+
+- `scaling_interaction_results.csv`: all deterministic frozen subsets under Base/TS/ConfTS x APS/RAPS.
+- `scaling_interaction_decomposition.csv`: feature, scaling, expected-additive, observed-joint, and interaction size gains.
+- `scaling_rank_stability.csv`: matched-size selector-rank correlations and best-method changes between scalings.
+- `scaling_interaction_summary.csv`: descriptive interaction counts and aggregate gains by subset type and pipeline.
+- `scaling_interaction_proposed.png`: the primary all-features versus proposed-selection interaction plot.
+- `scaling_interaction_protocol.json`: executable factorial, leakage, numerical, and decomposition checks.
