@@ -16,6 +16,7 @@ from .protocol import (
     attach_reference_deltas,
     code_version,
     dataset_from_config,
+    dataset_name,
     evaluate_logits,
     split_id,
 )
@@ -200,7 +201,7 @@ class _ExperimentContext:
     ) -> None:
         self.config = config
         self.seed = int(config["seed"])
-        self.dataset = dataset_from_config(config)
+        self.dataset = dataset_from_config(config, repository_root)
         self.n_features = self.dataset.features.shape[1]
         split_config = config["split"]
         sizes = tuple(
@@ -304,7 +305,7 @@ class _ExperimentContext:
         )
         metadata = {
             "experiment": self.config["experiment_name"],
-            "dataset": "controlled_multiclass",
+            "dataset": dataset_name(self.dataset),
             "model": model_name,
             "seed": self.seed,
             "split_id": self.split_identifier,

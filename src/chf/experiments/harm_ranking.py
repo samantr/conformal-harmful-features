@@ -22,6 +22,7 @@ from .protocol import (
     attach_reference_deltas,
     code_version,
     dataset_from_config,
+    dataset_name,
     evaluate_logits,
     split_id,
 )
@@ -39,7 +40,7 @@ def run_harm_ranking(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Compare conformal-harm definitions using outer tuning data only."""
     seed = int(config["seed"])
-    dataset = dataset_from_config(config)
+    dataset = dataset_from_config(config, repository_root)
     split_config = config["split"]
     split = make_four_way_split(
         dataset.labels,
@@ -143,7 +144,7 @@ def run_harm_ranking(
                     ]
                     metadata = {
                         "experiment": config["experiment_name"],
-                        "dataset": "controlled_multiclass",
+                        "dataset": dataset_name(dataset),
                         "model": model_name,
                         "seed": seed,
                         "split_id": outer_split_id,

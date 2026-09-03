@@ -8,7 +8,14 @@ import numpy as np
 import pandas as pd
 
 from chf.conformal import calibrate_threshold, evaluate_prediction_sets
-from chf.data import ControlledSyntheticDataset, make_controlled_multiclass
+from chf.data import (
+    ControlledSyntheticDataset,
+    DRY_BEAN_ARCHIVE_SHA256,
+    DRY_BEAN_URL,
+    RealTabularDataset,
+    load_dry_bean,
+    make_controlled_multiclass,
+)
 from chf.metrics import classification_metrics, conditional_coverage_metrics
 from chf.scaling import (
     probabilities_from_logits,
@@ -66,9 +73,29 @@ def code_version(repository_root: Path) -> str:
         return "unknown"
 
 
-def dataset_from_config(config: Mapping[str, Any]) -> ControlledSyntheticDataset:
-    """Recreate the controlled dataset from a resolved experiment config."""
+def dataset_from_config(
+    config: Mapping[str, Any], repository_root: Path | None = None
+) -> ControlledSyntheticDataset | RealTabularDataset:
+    """Load the configured dataset without fitting any preprocessing."""
     dataset_config = config["dataset"]
+    dataset_kind = str(dataset_config.get("kind", "controlled_synthetic"))
+    if dataset_kind == "dry_bean":
+        archive_path = Path(
+            dataset_config.get(
+                "archive_path", "outputs/_datasets/dry_bean_dataset.zip"
+            )
+        )
+        if not archive_path.is_absolute():
+            archive_path = (repository_root or Path.cwd()) / archive_path
+        return load_dry_bean(
+            archive_path,
+            source_url=str(dataset_config.get("source_url", DRY_BEAN_URL)),
+            expected_sha256=str(
+                dataset_config.get("archive_sha256", DRY_BEAN_ARCHIVE_SHA256)
+            ),
+        )
+    if dataset_kind != "controlled_synthetic":
+        raise ValueError(f"unsupported dataset kind: {dataset_kind}")
     feature_config = dataset_config["features"]
     return make_controlled_multiclass(
         n_samples=int(dataset_config["n_samples"]),
@@ -82,6 +109,11 @@ def dataset_from_config(config: Mapping[str, Any]) -> ControlledSyntheticDataset
         weak_signal=float(dataset_config.get("weak_signal", 0.25)),
         redundant_noise=float(dataset_config.get("redundant_noise", 0.15)),
     )
+
+
+def dataset_name(dataset: ControlledSyntheticDataset | RealTabularDataset) -> str:
+    """Return the stable result-table identifier for a loaded dataset."""
+    return str(getattr(dataset, "name", "controlled_multiclass"))
 
 
 def attach_reference_deltas(
@@ -191,6 +223,11 @@ def evaluate_logits(
                 lambda_reg=raps_lambda,
                 reject_zero_probabilities=bool(
                     config["temperature"].get("reject_zero_probabilities", True)
+                ),
+                reject_saturated_probabilities=bool(
+                    config["temperature"].get(
+                        "reject_saturated_probabilities", False
+                    )
                 ),
             )
             if "confts" in scaling_names

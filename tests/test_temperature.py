@@ -89,3 +89,23 @@ def test_diagnostics_detect_float32_underflow_and_saturation() -> None:
     assert diagnostics.zero_count == 2
     assert diagnostics.exactly_one_count == 1
     assert diagnostics.mean_max_probability == 1.0
+
+
+def test_confts_can_reject_saturated_candidates_without_changing_default() -> None:
+    logits = np.array(
+        [[100.0, 0.0], [0.0, 100.0], [80.0, 0.0], [0.0, 80.0]]
+    )
+    labels = np.array([0, 1, 0, 1])
+    result = tune_confts(
+        logits,
+        labels,
+        0.1,
+        "aps",
+        [0.5, 10.0],
+        seed=7,
+        reject_zero_probabilities=True,
+        reject_saturated_probabilities=True,
+    )
+
+    assert result.temperature == 10.0
+    assert result.rejected_temperatures == (0.5,)

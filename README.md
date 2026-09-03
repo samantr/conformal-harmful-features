@@ -4,13 +4,13 @@ Research code for testing whether features with little classification value can 
 
 ## Current milestone
 
-**Phase 6 - Interaction with scaling: COMPLETE.** Every deterministic Phase 5
-subset is evaluated under the full Base/TS/ConfTS x APS/RAPS factorial, with
-paired randomization and a difference-in-differences decomposition of feature,
-scaling, and interaction gains.
+**Phase 7 - Real datasets: IN PROGRESS.** The complete leakage-safe protocol has
+been transferred to UCI Dry Bean, including verified source provenance,
+train-only preprocessing, both model families, matched baselines, and the full
+Base/TS/ConfTS x APS/RAPS factorial.
 
-Next: **Phase 7 - Real datasets**. Transfer the complete leakage-safe protocol
-to Dry Bean first, followed by the remaining preregistered tabular datasets.
+Dry Bean is complete at the single-seed descriptive level. Next: transfer the
+same frozen protocol to **Covertype**; multi-seed inference remains Phase 8.
 
 ## Stage tracker
 
@@ -23,7 +23,7 @@ to Dry Bean first, followed by the remaining preregistered tabular datasets.
 | Phase 4 - Progressive subset selection | ✅ Complete |
 | Phase 5 - Required baselines | ✅ Complete |
 | Phase 6 - Interaction with scaling | ✅ Complete |
-| Phase 7 - Real datasets | ⏭️ Next |
+| Phase 7 - Real datasets | 🚧 In progress - Dry Bean complete |
 | Phase 8 - Robustness and statistics | Not started |
 
 ## Scientific rule
@@ -61,6 +61,7 @@ python experiments/04_harm_ranking.py --config configs/synthetic_debug.yaml
 python experiments/05_progressive_selection.py --config configs/synthetic_debug.yaml
 python experiments/06_required_baselines.py --config configs/synthetic_debug.yaml
 python experiments/07_scaling_interaction.py --config configs/synthetic_debug.yaml
+python experiments/08_real_dry_bean.py --config configs/dry_bean.yaml
 ```
 
 The first experiment generates the controlled 10-class/20-feature dataset, verifies its known feature roles using training data only, persists the exact four-way split, trains both model families, and writes all 12 Base/TS/ConfTS x APS/RAPS result rows to `baseline_results.csv`.
@@ -72,6 +73,7 @@ Phase 3 definitions, tuning-only cross-fitting protocol, stability results, and 
 Phase 4 one-shot/recursive paths, frozen-subset results, and untouched-test findings are recorded in [`paper/phase-4-validation.md`](paper/phase-4-validation.md).
 Phase 5 matched-size baseline protocols and results are recorded in [`paper/phase-5-validation.md`](paper/phase-5-validation.md).
 Phase 6 scaling-factorial protocol, interaction decomposition, and results are recorded in [`paper/phase-6-validation.md`](paper/phase-6-validation.md).
+Phase 7 Dry Bean provenance, protocol, accepted results, numerical reset, and decision are recorded in [`paper/phase-7-validation.md`](paper/phase-7-validation.md).
 
 ## Planned experiment sequence
 
@@ -82,3 +84,4 @@ Phase 6 scaling-factorial protocol, interaction decomposition, and results are r
 5. `05_progressive_selection.py`: freeze a subset, recalibrate, evaluate once.
 6. `06_required_baselines.py`: matched-size comparison against required baselines.
 7. `07_scaling_interaction.py`: Base/TS/ConfTS x APS/RAPS interaction analysis.
+8. `08_real_dry_bean.py`: first real-data transfer with provenance and protocol audits.

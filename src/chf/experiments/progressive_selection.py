@@ -20,7 +20,13 @@ from chf.selection import (
     rank_progressive_candidates,
 )
 
-from .protocol import code_version, dataset_from_config, evaluate_logits, split_id
+from .protocol import (
+    code_version,
+    dataset_from_config,
+    dataset_name,
+    evaluate_logits,
+    split_id,
+)
 
 
 PIPELINE_COLUMNS = ["scaling", "score"]
@@ -209,7 +215,7 @@ def run_progressive_selection(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Compare one-shot and recursive removal, then perform one final test."""
     seed = int(config["seed"])
-    dataset = dataset_from_config(config)
+    dataset = dataset_from_config(config, repository_root)
     split_values = config["split"]
     split = make_four_way_split(
         dataset.labels,
@@ -220,7 +226,8 @@ def run_progressive_selection(
     outer_split_id = split_id(split)
     save_split_artifact(
         output_dir / "split_indices.npz", split, seed=seed,
-        metadata={"experiment_name": config["experiment_name"], "phase": 4,
+        metadata={"experiment_name": config["experiment_name"],
+                  "phase": int(config.get("phase", 4)),
                   "split_id": outer_split_id},
     )
     selection_config = config.get("progressive_selection", {})
@@ -495,7 +502,7 @@ def _final_evaluation(
             seed=seed + 400_000,
         )
         metadata = {
-            "experiment": config["experiment_name"], "dataset": "controlled_multiclass",
+            "experiment": config["experiment_name"], "dataset": dataset_name(dataset),
             "model": model_name, "method": method, "seed": seed,
             "split_id": split_identifier, "selected_indices": json.dumps(selected),
             "selected_features": json.dumps([dataset.feature_names[i] for i in selected]),

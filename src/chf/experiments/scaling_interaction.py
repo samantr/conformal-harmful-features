@@ -12,7 +12,13 @@ from chf.data import make_four_way_split, save_split_artifact
 from chf.models import fit_classifier
 from chf.scaling import probabilities_from_logits
 
-from .protocol import code_version, dataset_from_config, evaluate_logits, split_id
+from .protocol import (
+    code_version,
+    dataset_from_config,
+    dataset_name,
+    evaluate_logits,
+    split_id,
+)
 
 
 SCALINGS = ("base", "ts", "confts")
@@ -45,10 +51,12 @@ def run_scaling_interaction(
     """
     seed = int(config["seed"])
     output_dir.mkdir(parents=True, exist_ok=True)
+    dataset = dataset_from_config(config, repository_root)
     source_path = selections_path or output_dir / "baseline_selections.csv"
-    selections = _load_frozen_selections(source_path, config)
+    selections = _load_frozen_selections(
+        source_path, config, n_total_features=len(dataset.feature_names)
+    )
 
-    dataset = dataset_from_config(config)
     split_values = config["split"]
     split = make_four_way_split(
         dataset.labels,
@@ -65,7 +73,7 @@ def run_scaling_interaction(
         seed=seed,
         metadata={
             "experiment_name": config["experiment_name"],
-            "phase": 6,
+            "phase": int(config.get("phase", 6)),
             "split_id": identifier,
         },
     )
@@ -102,7 +110,10 @@ def run_scaling_interaction(
 
 
 def _load_frozen_selections(
-    selections_path: Path, config: Mapping[str, Any]
+    selections_path: Path,
+    config: Mapping[str, Any],
+    *,
+    n_total_features: int,
 ) -> pd.DataFrame:
     if not selections_path.exists():
         raise FileNotFoundError(
@@ -157,9 +168,6 @@ def _load_frozen_selections(
     if selections.duplicated(list(SELECTION_KEY)).any():
         raise ValueError("selection artifact contains duplicate deterministic subsets")
 
-    n_total_features = sum(
-        int(value) for value in config["dataset"]["features"].values()
-    )
     for row in selections.itertuples(index=False):
         selected = tuple(json.loads(row.selected_indices))
         if any(not isinstance(index, int) for index in selected):
@@ -289,7 +297,7 @@ def _evaluate_frozen_selections(
         )
         metadata = {
             "experiment": config["experiment_name"],
-            "dataset": "controlled_multiclass",
+            "dataset": dataset_name(dataset),
             "seed": seed,
             "split_id": identifier,
             "classifier_refit": True,

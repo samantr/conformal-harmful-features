@@ -127,6 +127,7 @@ def tune_confts(
     k_reg: int = 1,
     lambda_reg: float = 0.001,
     reject_zero_probabilities: bool = True,
+    reject_saturated_probabilities: bool = False,
 ) -> ConfTSTuningResult:
     """Tune ConfTS using two disjoint subsets of the tuning partition.
 
@@ -156,7 +157,12 @@ def tune_confts(
     for temperature in candidates:
         probabilities = probabilities_from_logits(logits, temperature)
         diagnostics = probability_diagnostics(probabilities)
-        if reject_zero_probabilities and diagnostics.zero_count:
+        unsafe_zero = reject_zero_probabilities and diagnostics.zero_count > 0
+        unsafe_saturation = (
+            reject_saturated_probabilities
+            and diagnostics.exactly_one_count > 0
+        )
+        if unsafe_zero or unsafe_saturation:
             rejected.append(temperature)
             continue
 

@@ -17,7 +17,13 @@ from chf.selection import (
 )
 
 from .progressive_selection import run_progressive_selection
-from .protocol import code_version, dataset_from_config, evaluate_logits, split_id
+from .protocol import (
+    code_version,
+    dataset_from_config,
+    dataset_name,
+    evaluate_logits,
+    split_id,
+)
 
 
 def run_required_baselines(
@@ -25,7 +31,7 @@ def run_required_baselines(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Compare required selectors at Phase 4's tuning-selected subset sizes."""
     seed = int(config["seed"])
-    dataset = dataset_from_config(config)
+    dataset = dataset_from_config(config, repository_root)
     split_values = config["split"]
     split = make_four_way_split(
         dataset.labels,
@@ -36,7 +42,8 @@ def run_required_baselines(
     identifier = split_id(split)
     save_split_artifact(
         output_dir / "split_indices.npz", split, seed=seed,
-        metadata={"experiment_name": config["experiment_name"], "phase": 5,
+        metadata={"experiment_name": config["experiment_name"],
+                  "phase": int(config.get("phase", 5)),
                   "split_id": identifier},
     )
 
@@ -173,7 +180,7 @@ def _evaluate_frozen_selections(
             seed=seed + 500_000, included_scores=("aps",), included_scalings=("base",),
         )[0]
         metadata = {
-            "experiment": config["experiment_name"], "dataset": "controlled_multiclass",
+            "experiment": config["experiment_name"], "dataset": dataset_name(dataset),
             "seed": seed, "split_id": identifier, "classifier_refit": True,
             "final_calibration_used_once": True, "final_test_used_once": True,
             "code_version": version, **selection,
