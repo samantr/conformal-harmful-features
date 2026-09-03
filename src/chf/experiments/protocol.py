@@ -14,10 +14,15 @@ from chf.data import (
     ControlledSyntheticDataset,
     DRY_BEAN_ARCHIVE_SHA256,
     DRY_BEAN_URL,
+    HAR_URL,
+    HumanActivityRecognitionDataset,
     RealTabularDataset,
     load_covertype,
     load_dry_bean,
+    load_human_activity_recognition,
     make_controlled_multiclass,
+    make_four_way_split,
+    make_group_four_way_split,
     stratified_subsample,
 )
 from chf.metrics import classification_metrics, conditional_coverage_metrics
@@ -53,6 +58,29 @@ def split_id(split: Any) -> str:
         digest.update(name.encode("utf-8"))
         digest.update(np.asarray(getattr(split, name), dtype=np.int64).tobytes())
     return digest.hexdigest()[:16]
+
+
+def experiment_split(config: Mapping[str, Any], dataset: Any) -> Any:
+    """Create the configured outer split, respecting dataset grouping when present."""
+    split_values = config["split"]
+    names = ("train", "tune", "calibration", "test")
+    split_unit = str(split_values.get("unit", "rows"))
+    if split_unit == "groups":
+        groups = getattr(dataset, "groups", None)
+        if groups is None:
+            raise ValueError("group-based split requested for a dataset without groups")
+        counts = tuple(int(split_values[name]) for name in names)
+        return make_group_four_way_split(
+            dataset.labels,
+            groups,
+            counts,
+            int(config["seed"]),
+            candidate_permutations=int(split_values.get("candidate_permutations", 4096)),
+        )
+    if split_unit != "rows":
+        raise ValueError(f"unsupported split unit: {split_unit}")
+    sizes = tuple(int(split_values[name]) for name in names)
+    return make_four_way_split(dataset.labels, sizes, int(config["seed"]))
 
 
 def selection_data_indices(
@@ -120,10 +148,22 @@ def code_version(repository_root: Path) -> str:
 
 def dataset_from_config(
     config: Mapping[str, Any], repository_root: Path | None = None
-) -> ControlledSyntheticDataset | RealTabularDataset:
+) -> ControlledSyntheticDataset | RealTabularDataset | HumanActivityRecognitionDataset:
     """Load the configured dataset without fitting any preprocessing."""
     dataset_config = config["dataset"]
     dataset_kind = str(dataset_config.get("kind", "controlled_synthetic"))
+    if dataset_kind == "human_activity_recognition":
+        archive_path = Path(
+            dataset_config.get("archive_path", "outputs/_datasets/human_activity_recognition.zip")
+        )
+        if not archive_path.is_absolute():
+            archive_path = (repository_root or Path.cwd()) / archive_path
+        configured_sha = dataset_config.get("archive_sha256")
+        return load_human_activity_recognition(
+            archive_path,
+            source_url=str(dataset_config.get("source_url", HAR_URL)),
+            expected_sha256=None if configured_sha in (None, "") else str(configured_sha),
+        )
     if dataset_kind == "covertype":
         archive_path = Path(
             dataset_config.get(
@@ -173,7 +213,7 @@ def dataset_from_config(
     )
 
 
-def dataset_name(dataset: ControlledSyntheticDataset | RealTabularDataset) -> str:
+def dataset_name(dataset: Any) -> str:
     """Return the stable result-table identifier for a loaded dataset."""
     return str(getattr(dataset, "name", "controlled_multiclass"))
 
