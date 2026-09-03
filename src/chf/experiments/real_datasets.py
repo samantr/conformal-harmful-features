@@ -9,7 +9,13 @@ import yaml
 from chf.data import make_four_way_split, save_split_artifact
 
 from .baselines import run_required_baselines
-from .protocol import dataset_from_config, dataset_name, split_id
+from .protocol import (
+    dataset_from_config,
+    dataset_name,
+    selection_data_id,
+    selection_data_indices,
+    split_id,
+)
 from .scaling_interaction import SCALINGS, SCORES, run_scaling_interaction
 
 
@@ -27,12 +33,31 @@ def run_real_dataset_benchmark(
     _validate_dataset_declaration(config, dataset)
     split = _make_split(config, dataset.labels)
     identifier = split_id(split)
-    provenance = _dataset_provenance(config, dataset, split, identifier)
+    seed = int(config["seed"])
+    selection_train, selection_tune = selection_data_indices(
+        config, split, dataset.labels, seed=seed
+    )
+    selection_identifier = selection_data_id(selection_train, selection_tune)
+    provenance = _dataset_provenance(
+        config,
+        dataset,
+        split,
+        identifier,
+        selection_train,
+        selection_tune,
+        selection_identifier,
+    )
     save_split_artifact(
         output_dir / "phase7_split_indices.npz",
         split,
         seed=int(config["seed"]),
         metadata=provenance,
+    )
+    np.savez_compressed(
+        output_dir / "phase7_selection_indices.npz",
+        train=selection_train,
+        tune=selection_tune,
+        selection_data_id=np.asarray(selection_identifier),
     )
     split_distribution = _split_distribution(dataset, split)
     split_distribution.to_csv(output_dir / "phase7_split_distribution.csv", index=False)
@@ -62,6 +87,9 @@ def run_real_dataset_benchmark(
         factorial_results=factorial_results,
         interactions=interactions,
         rank_stability=rank_stability,
+        selection_train=selection_train,
+        selection_tune=selection_tune,
+        selection_identifier=selection_identifier,
     )
     return selections, factorial_results, interactions, main_table
 
@@ -99,7 +127,13 @@ def _make_split(config: Mapping[str, Any], labels: np.ndarray) -> Any:
 
 
 def _dataset_provenance(
-    config: Mapping[str, Any], dataset: Any, split: Any, identifier: str
+    config: Mapping[str, Any],
+    dataset: Any,
+    split: Any,
+    identifier: str,
+    selection_train: np.ndarray,
+    selection_tune: np.ndarray,
+    selection_identifier: str,
 ) -> dict[str, Any]:
     return {
         "experiment_name": config["experiment_name"],
@@ -111,13 +145,31 @@ def _dataset_provenance(
         "n_features": int(dataset.features.shape[1]),
         "n_classes": int(len(np.unique(dataset.labels))),
         "feature_names": list(dataset.feature_names),
+        "feature_manifest": [
+            {
+                "index": int(feature.index),
+                "name": feature.name,
+                "role": feature.role,
+                "source_feature": feature.source_feature,
+            }
+            for feature in dataset.feature_manifest
+        ],
         "class_names": list(dataset.class_names),
         "split_id": identifier,
         "split_sizes": {
             name: int(len(getattr(split, name)))
             for name in ("train", "tune", "calibration", "test")
         },
-        "preprocessing": "StandardScaler fit independently on outer train for each subset",
+        "selection_data_id": selection_identifier,
+        "selection_sizes": {
+            "train": int(len(selection_train)),
+            "tune": int(len(selection_tune)),
+        },
+        "selection_budget": dict(config.get("selection_budget", {})),
+        "preprocessing": (
+            "selection models fit preprocessing on selection-train only; "
+            "frozen final models refit preprocessing on full outer train"
+        ),
     }
 
 
@@ -187,6 +239,9 @@ def _write_protocol_record(
     factorial_results: pd.DataFrame,
     interactions: pd.DataFrame,
     rank_stability: pd.DataFrame,
+    selection_train: np.ndarray,
+    selection_tune: np.ndarray,
+    selection_identifier: str,
 ) -> None:
     deterministic = selections.loc[selections["repetition"].astype(int) == -1]
     expected_factorial_rows = len(deterministic) * len(SCALINGS) * len(SCORES)
@@ -222,6 +277,19 @@ def _write_protocol_record(
         "identical_split_across_subprotocols": bool(
             baseline_results["split_id"].eq(identifier).all()
             and factorial_results["split_id"].eq(identifier).all()
+        ),
+        "selection_rows_within_outer_partitions": bool(
+            np.isin(selection_train, split.train).all()
+            and np.isin(selection_tune, split.tune).all()
+            and np.intersect1d(selection_train, selection_tune).size == 0
+        ),
+        "identical_selection_data_across_subprotocols": bool(
+            baseline_results["selection_data_id"].eq(
+                selection_identifier
+            ).all()
+            and factorial_results["selection_data_id"].eq(
+                selection_identifier
+            ).all()
         ),
         "all_required_methods_present": required_methods.issubset(
             set(selections["method"])
@@ -274,9 +342,18 @@ def _write_protocol_record(
         "status": "PASS" if all(checks.values()) else "FAIL",
         "checks": checks,
         "protocol": {
-            "preprocessing_fit_partition": "outer train only, separately per subset",
-            "classifier_fit_partition": "outer train",
-            "ranking_and_subset_size_partition": "outer tune only",
+            "preprocessing_fit_partition": (
+                "selection train during search; full outer train after freeze"
+            ),
+            "classifier_fit_partition": (
+                "selection train during search; full outer train after freeze"
+            ),
+            "ranking_and_subset_size_partition": (
+                "fixed selection train/tune rows only"
+            ),
+            "selection_data_id": selection_identifier,
+            "selection_train_rows": int(len(selection_train)),
+            "selection_tune_rows": int(len(selection_tune)),
             "final_calibration_access": "once after every choice was frozen",
             "final_test_access": "once after every choice was frozen",
             "paired_randomization": "shared uniforms within split and stage",

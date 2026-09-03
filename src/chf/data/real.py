@@ -1,3 +1,4 @@
+import gzip
 import hashlib
 import io
 import urllib.request
@@ -61,6 +62,38 @@ DRY_BEAN_CLASS_NAMES = (
     "HOROZ",
     "SIRA",
     "DERMASON",
+)
+
+COVERTYPE_URL = "https://archive.ics.uci.edu/static/public/31/covertype.zip"
+COVERTYPE_ARCHIVE_SHA256 = (
+    "89a975c2457cd48e824238ae43c5a3cb762e42c4b4078d9b44a4514055105f6d"
+)
+COVERTYPE_ARCHIVE_MEMBER = "covtype.data.gz"
+COVERTYPE_QUANTITATIVE_FEATURE_NAMES = (
+    "Elevation",
+    "Aspect",
+    "Slope",
+    "Horizontal_Distance_To_Hydrology",
+    "Vertical_Distance_To_Hydrology",
+    "Horizontal_Distance_To_Roadways",
+    "Hillshade_9am",
+    "Hillshade_Noon",
+    "Hillshade_3pm",
+    "Horizontal_Distance_To_Fire_Points",
+)
+COVERTYPE_FEATURE_NAMES = (
+    *COVERTYPE_QUANTITATIVE_FEATURE_NAMES,
+    *(f"Wilderness_Area_{index}" for index in range(1, 5)),
+    *(f"Soil_Type_{index}" for index in range(1, 41)),
+)
+COVERTYPE_CLASS_NAMES = (
+    "Spruce/Fir",
+    "Lodgepole Pine",
+    "Ponderosa Pine",
+    "Cottonwood/Willow",
+    "Aspen",
+    "Douglas-fir",
+    "Krummholz",
 )
 
 
@@ -132,8 +165,71 @@ def load_dry_bean(
     )
 
 
+def load_covertype(
+    archive_path: str | Path,
+    *,
+    source_url: str = COVERTYPE_URL,
+    expected_sha256: str = COVERTYPE_ARCHIVE_SHA256,
+) -> RealTabularDataset:
+    """Load the official UCI Covertype data from a verified local cache."""
+    archive = Path(archive_path)
+    if not archive.exists():
+        _download_verified_archive(
+            archive, source_url, expected_sha256, artifact_name="Covertype"
+        )
+    observed_sha256 = _file_sha256(archive)
+    if observed_sha256 != expected_sha256:
+        raise ValueError(
+            "Covertype archive checksum mismatch: "
+            f"expected {expected_sha256}, observed {observed_sha256}"
+        )
+
+    with zipfile.ZipFile(archive) as bundle:
+        try:
+            compressed_data = bundle.read(COVERTYPE_ARCHIVE_MEMBER)
+        except KeyError as error:
+            raise ValueError(
+                f"Covertype archive lacks {COVERTYPE_ARCHIVE_MEMBER}"
+            ) from error
+    try:
+        csv_bytes = gzip.decompress(compressed_data)
+    except (EOFError, gzip.BadGzipFile) as error:
+        raise ValueError("Covertype data member is not valid gzip data") from error
+    features, labels = _parse_covertype_csv(csv_bytes)
+    manifest = tuple(
+        TabularFeature(index=index, name=name, role="quantitative")
+        for index, name in enumerate(COVERTYPE_QUANTITATIVE_FEATURE_NAMES)
+    ) + tuple(
+        TabularFeature(
+            index=index,
+            name=name,
+            role="one_hot",
+            source_feature=(
+                "Wilderness_Area" if index < 14 else "Soil_Type"
+            ),
+        )
+        for index, name in enumerate(
+            COVERTYPE_FEATURE_NAMES[len(COVERTYPE_QUANTITATIVE_FEATURE_NAMES) :],
+            start=len(COVERTYPE_QUANTITATIVE_FEATURE_NAMES),
+        )
+    )
+    return RealTabularDataset(
+        name="covertype",
+        features=features,
+        labels=labels,
+        feature_manifest=manifest,
+        class_names=COVERTYPE_CLASS_NAMES,
+        source_url=source_url,
+        archive_sha256=observed_sha256,
+    )
+
+
 def _download_verified_archive(
-    destination: Path, source_url: str, expected_sha256: str
+    destination: Path,
+    source_url: str,
+    expected_sha256: str,
+    *,
+    artifact_name: str = "Dry Bean",
 ) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".part")
@@ -143,7 +239,7 @@ def _download_verified_archive(
         observed_sha256 = hashlib.sha256(payload).hexdigest()
         if observed_sha256 != expected_sha256:
             raise ValueError(
-                "Downloaded Dry Bean archive checksum mismatch: "
+                f"Downloaded {artifact_name} archive checksum mismatch: "
                 f"expected {expected_sha256}, observed {observed_sha256}"
             )
         temporary.write_bytes(payload)
@@ -225,3 +321,39 @@ def _parse_dry_bean_arff(
         count=len(label_names),
     )
     return features, labels
+
+
+def _parse_covertype_csv(
+    csv_bytes: bytes, *, expected_n_samples: int = 581_012
+) -> tuple[np.ndarray, np.ndarray]:
+    try:
+        raw = np.loadtxt(io.BytesIO(csv_bytes), delimiter=",", dtype=np.float64)
+    except (UnicodeDecodeError, ValueError) as error:
+        raise ValueError("Covertype data must be a complete numeric CSV") from error
+    expected_columns = len(COVERTYPE_FEATURE_NAMES) + 1
+    if raw.shape != (expected_n_samples, expected_columns):
+        raise ValueError(
+            "Covertype data shape differs from the official schema: "
+            f"expected {(expected_n_samples, expected_columns)}, observed {raw.shape}"
+        )
+    if not np.isfinite(raw).all():
+        raise ValueError("Covertype data must contain only finite values")
+    if not np.equal(raw, np.floor(raw)).all():
+        raise ValueError("Covertype source columns must all contain integer values")
+
+    binary = raw[:, 10:54]
+    if not np.isin(binary, (0.0, 1.0)).all():
+        raise ValueError("Covertype wilderness and soil columns must be binary")
+    if not np.equal(binary[:, :4].sum(axis=1), 1.0).all():
+        raise ValueError(
+            "Each Covertype row must select exactly one wilderness area"
+        )
+    if not np.equal(binary[:, 4:].sum(axis=1), 1.0).all():
+        raise ValueError("Each Covertype row must select exactly one soil type")
+
+    source_labels = raw[:, -1].astype(np.int64)
+    expected_labels = np.arange(1, len(COVERTYPE_CLASS_NAMES) + 1)
+    if not np.array_equal(np.unique(source_labels), expected_labels):
+        raise ValueError("Covertype data must contain all seven labels 1 through 7")
+    features = np.ascontiguousarray(raw[:, :-1], dtype=np.float64)
+    return features, source_labels - 1

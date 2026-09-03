@@ -1,0 +1,93 @@
+experiment_name: covertype_phase7b
+phase: 7
+seed: 44
+dataset:
+  kind: covertype
+  n_samples: 581012
+  n_features: 54
+  n_classes: 7
+  archive_path: outputs/_datasets/covertype.zip
+  source_url: https://archive.ics.uci.edu/static/public/31/covertype.zip
+  archive_sha256: 89a975c2457cd48e824238ae43c5a3cb762e42c4b4078d9b44a4514055105f6d
+split:
+  train: 290506
+  tune: 96835
+  calibration: 96835
+  test: 96836
+selection_budget:
+  train_max_samples: 20000
+  tune_max_samples: 20000
+models:
+  logistic_regression:
+    type: logistic_regression
+    preserve_binary_indicators: true
+    C: 1.0
+    max_iter: 500
+  small_neural_network:
+    type: mlp
+    preserve_binary_indicators: true
+    hidden_layers: [64, 32]
+    activation: relu
+    weight_decay: 0.0001
+    batch_size: 256
+    learning_rate: 0.001
+    max_epochs: 60
+    early_stopping: true
+    validation_fraction: 0.1
+    patience: 8
+temperature:
+  grid: [1.0, 1.1, 1.2, 1.4, 1.6, 1.8, 2.0, 2.5, 3.0]
+  confts_threshold_fraction: 0.5
+  reject_zero_probabilities: true
+  reject_saturated_probabilities: true
+conformal:
+  alpha: 0.10
+  scores: [aps, raps]
+  raps_lambda: 0.001
+  raps_k_reg: 1
+metrics:
+  ece_bins: 15
+  min_sscv_stratum_size: 100
+stability:
+  max_coverage_deviation: 0.01
+  minimum_accuracy: 0.50
+selection:
+  max_accuracy_loss: 0.01
+  max_coverage_deviation: 0.01
+harm:
+  primary_formulation: constrained
+  selection_resamples: 5
+  crossfit_folds: 4
+  scale_share_of_remainder: 0.60
+  constraints:
+    max_accuracy_loss: 0.01
+    max_coverage_shortfall: 0.03
+  weights:
+    beta: 4.0
+    gamma: 10.0
+    eta: 1.0
+progressive_selection:
+  scaling: base
+  score: aps
+  selection_resamples: 5
+  crossfit_folds: 4
+  max_removals: 5
+  require_positive_incremental_gain: true
+baselines:
+  random_repetitions: 10
+  permutation_repeats: 10
+  crfe_lambda: 0.5
+  shap_background_size: 20
+  shap_evaluation_size: 10
+  shap_max_evaluations: 109
+scaling_interaction:
+  methods:
+    - all_features
+    - mutual_information
+    - permutation_importance
+    - rfe
+    - shap
+    - crfe
+    - conformal_harm_one_shot
+    - conformal_harm_recursive
+  descriptive_interaction_tolerance: 0.01

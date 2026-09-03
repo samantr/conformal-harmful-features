@@ -21,10 +21,40 @@ class FittedClassifier:
                 values = np.column_stack((-values, values))
             return values.astype(np.float64, copy=False)
 
-        probabilities = np.asarray(self.estimator.predict_proba(transformed))
-        tiny = np.finfo(np.float64).tiny
-        # log(p) is a valid set of logits because softmax(log(p)) == p.
-        return np.log(np.clip(probabilities, tiny, 1.0))
+        # Reconstruct the final affine layer rather than taking log(predict_proba).
+        # The latter loses information after softmax rounds confident outputs to
+        # exact 0/1, which can make every otherwise safe temperature unusable.
+        activation = transformed
+        for weights, intercepts in zip(
+            self.estimator.coefs_[:-1],
+            self.estimator.intercepts_[:-1],
+            strict=True,
+        ):
+            activation = activation @ weights + intercepts
+            if self.estimator.activation == "identity":
+                continue
+            if self.estimator.activation == "logistic":
+                positive = activation >= 0
+                negative_values = np.exp(activation[~positive])
+                activation[positive] = 1.0 / (
+                    1.0 + np.exp(-activation[positive])
+                )
+                activation[~positive] = negative_values / (
+                    1.0 + negative_values
+                )
+            elif self.estimator.activation == "tanh":
+                np.tanh(activation, out=activation)
+            elif self.estimator.activation == "relu":
+                np.maximum(activation, 0.0, out=activation)
+            else:  # pragma: no cover - sklearn rejects unknown activations
+                raise ValueError(
+                    f"unsupported MLP activation: {self.estimator.activation}"
+                )
+        values = activation @ self.estimator.coefs_[-1]
+        values = values + self.estimator.intercepts_[-1]
+        if values.shape[1] == 1:
+            values = np.column_stack((np.zeros(len(values)), values[:, 0]))
+        return np.asarray(values, dtype=np.float64)
 
     def predict_proba(self, features: np.ndarray) -> np.ndarray:
         logits = self.logits(features)
@@ -50,6 +80,11 @@ def fit_classifier(
         raise ValueError("training features and labels have incompatible shapes")
     model_type = str(config.get("type", ""))
     scaler = StandardScaler().fit(features)
+    if bool(config.get("preserve_binary_indicators", False)):
+        binary_columns = np.logical_or(features == 0, features == 1).all(axis=0)
+        scaler.mean_[binary_columns] = 0.0
+        scaler.var_[binary_columns] = 1.0
+        scaler.scale_[binary_columns] = 1.0
     transformed = scaler.transform(features)
 
     if model_type == "logistic_regression":

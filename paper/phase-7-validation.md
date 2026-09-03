@@ -1,13 +1,13 @@
 # Phase 7 Validation Record
 
-**Status:** In progress - Dry Bean milestone complete
+**Status:** In progress - Dry Bean and Covertype milestones complete
 
 **Completed:** 2026-09-03
 
 **Scope:** Transfer the complete leakage-safe selection, baseline, and scaling
-protocol to the first preregistered real dataset, UCI Dry Bean. Covertype, Human
-Activity Recognition, and a carefully framed medical dataset remain before
-Phase 7 as a whole is complete.
+protocol to the preregistered real datasets. UCI Dry Bean and Covertype are
+complete. Human Activity Recognition and a carefully framed medical dataset
+remain before Phase 7 as a whole is complete.
 
 ## Dataset and protocol
 
@@ -118,5 +118,124 @@ pipeline, and complete interaction/rank outputs. The full suite passes 42 tests.
 neural network, while the logistic result is negative. H4 has partial
 descriptive support: one-shot improves SSCV and recursive improves maximum
 class-coverage deviation. These are not stability claims. Phase 7 should
-continue with Covertype, and Phase 8 must establish whether the neural gains and
-feature choices survive paired multi-seed analysis.
+advance to Covertype, whose result follows below; Phase 8 must establish whether
+the neural gains and feature choices survive paired multi-seed analysis.
+
+## Phase 7B - Covertype
+
+### Dataset, split, and compute budget
+
+The official [UCI Covertype archive](https://archive.ics.uci.edu/dataset/31/covertype)
+is pinned by SHA-256 digest
+`89a975c2457cd48e824238ae43c5a3cb762e42c4b4078d9b44a4514055105f6d`.
+The loader verifies the compressed member, 581,012 rows, 54 integer features,
+finite values, four wilderness and 40 soil binary indicators, exactly one
+active indicator in each group, and all seven labels. The ten quantitative
+columns are standardized from training data; the 44 one-hot indicators remain
+on their native 0/1 scale.
+
+The seed-44 stratified outer split is:
+
+| Partition | Rows | Permitted use |
+|---|---:|---|
+| Training | 290,506 | Final classifier and preprocessing fits |
+| Tuning/selection | 96,835 | Scaling and frozen-choice data only |
+| Conformal calibration | 96,835 | Fresh thresholds after choices freeze |
+| Test | 96,836 | One final evaluation per frozen pipeline |
+
+The outer split identifier is `ad4da0a0e1bd9414`. To make the 54-feature
+retrain-and-rerank search tractable, every selection method receives the same
+fixed stratified subset of 20,000 outer-training and 20,000 outer-tuning rows.
+Its identifier is `cef893d2c919063b`. This compute budget affects ranking and
+subset-size choice only. Every frozen final model is refit on all 290,506
+training rows, while final scaling, calibration, and test use the complete
+outer partitions. Recursive removal is capped at five features. The neural
+model has a fixed 60-epoch cap; some fits reach that cap, so model convergence
+is a declared limitation rather than an unreported exception.
+
+### Numerical-safety reset
+
+The first implementation-validation attempt standardized rare one-hot soil
+indicators and reconstructed neural logits from already rounded probabilities.
+The resulting full-data neural fit produced exact zero/one probabilities and
+all ConfTS temperatures failed the preregistered safety rule. The attempt
+stopped before final calibration/test evaluation and is excluded.
+
+Before restarting selection, binary indicators were preserved as 0/1 and the
+MLP interface was corrected to return its true final affine-layer logits. A
+full-training safety check then produced no exact zeros or ones at any frozen
+temperature from 1.0 through 3.0. This corrected preprocessing and logit path
+was used consistently for every accepted selector and final pipeline.
+
+### Frozen proposed subsets
+
+| Model | Path | Features kept | Removed features | Tuning accuracy loss | Tuning APS-size gain |
+|---|---|---:|---|---:|---:|
+| Logistic regression | One-shot | 51 | Soil Types 1, 12, 13 | -0.00055 | 0.00511 |
+| Logistic regression | Recursive | 51 | Soil Types 9, 12, 13 | -0.00035 | 0.00568 |
+| Small neural network | One-shot | 53 | Soil Type 26 | -0.01145 | 0.03632 |
+| Small neural network | Recursive | 53 | Soil Type 26 | -0.01145 | 0.03632 |
+
+Negative accuracy loss means the selected subset improved tuning accuracy.
+The neural one-shot and recursive paths converge to the same frozen subset.
+Soil Type 26 differs from every matched ordinary selector: mutual information
+removes Soil Type 37, RFE and permutation importance remove Soil Type 15, SHAP
+removes Soil Type 40, and CRFE removes Hillshade 9am.
+
+### Final untouched-test results: Base APS
+
+| Model | Method | Features | Accuracy | Coverage | Mean size | SSCV | Class max deviation |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Logistic regression | All features | 54 | 0.7246 | 0.9024 | 1.6468 | 0.0987 | 0.4778 |
+| Logistic regression | Proposed one-shot | 51 | 0.7248 | 0.9026 | 1.6473 | 0.0968 | 0.4752 |
+| Logistic regression | Proposed recursive | 51 | 0.7243 | 0.9028 | 1.6459 | 0.0963 | 0.4778 |
+| Logistic regression | CRFE, matched | 51 | 0.7236 | 0.9024 | 1.6621 | 0.1022 | 0.5271 |
+| Small neural network | All features | 54 | 0.8578 | 0.9029 | 1.2465 | 0.0772 | 0.1061 |
+| Small neural network | Proposed, both paths | 53 | 0.8644 | 0.9000 | **1.2248** | 0.0803 | 0.1402 |
+| Small neural network | Mutual information, matched | 53 | **0.8674** | 0.9011 | 1.2258 | **0.0772** | 0.1528 |
+| Small neural network | RFE/permutation, matched | 53 | 0.8673 | 0.9006 | 1.2258 | 0.0783 | 0.1459 |
+| Small neural network | CRFE, matched | 53 | 0.8656 | 0.9020 | 1.2273 | 0.0802 | 0.1389 |
+
+The logistic effect is negligible. Recursive removal reduces mean size by only
+0.0009 with a 0.0002 accuracy loss; one-shot makes sets 0.0005 larger. The
+negative logistic conclusion is retained despite both proposed subsets beating
+matched CRFE.
+
+The neural subset gives the clearer result. Removing Soil Type 26 improves
+accuracy by 0.0066 and reduces mean APS size by 0.0217 versus all features;
+coverage moves from 0.9029 to 0.9000. It has the smallest mean set among the
+deterministic matched selectors, but its advantage over mutual information and
+RFE is only 0.0010, while those selectors have about 0.003 higher accuracy. In
+the separate paired Base-APS baseline run, the proposal also beats the mean of
+ten matched random subsets in accuracy (0.8644 versus 0.8620) and set size
+(1.2289 versus 1.2383). This is a modest Pareto-frontier improvement, not broad
+dominance over ordinary feature selection.
+
+Conditional behavior is negative. Neural SSCV worsens from 0.0772 to 0.0803,
+and maximum class-coverage deviation worsens from 0.1061 to 0.1402. The highly
+imbalanced Covertype labels also produce very large class deviations for the
+linear model despite valid marginal coverage. Covertype therefore does not
+support H4.
+
+### Scaling interaction and decision
+
+Base, TS, and ConfTS all select `T=1.0` for every deterministic subset under
+both APS and RAPS. Their results are identical, every interaction term is zero,
+and Covertype supplies no evidence for H3.
+
+All 18 Phase 7 executable checks pass: checksum and schema, multiclass
+suitability, disjoint outer splits, class presence, selection rows contained in
+their permitted outer partitions, identical selection IDs across subprotocols,
+all required methods, the complete 96-row deterministic factorial, finite
+fresh thresholds and metrics, coverage within the stricter 0.01 tolerance, no
+exact zero/one probabilities, frozen subsets, one final calibration/test use
+per pipeline, and complete interaction/rank outputs. The full suite passes 46
+tests.
+
+**Covertype decision:** H1 receives useful support because the proposed neural
+feature differs from every ordinary selector. H2 receives modest support: the
+neural result improves the all-feature accuracy/efficiency frontier and beats
+matched CRFE and mean random performance, but MI/RFE nearly match its
+efficiency with better accuracy. H3 receives no support and H4 is negative.
+These remain single-seed descriptive findings. Phase 7 should continue with
+Human Activity Recognition before Phase 8 performs paired multi-seed inference.

@@ -9,12 +9,16 @@ import pandas as pd
 
 from chf.conformal import calibrate_threshold, evaluate_prediction_sets
 from chf.data import (
+    COVERTYPE_ARCHIVE_SHA256,
+    COVERTYPE_URL,
     ControlledSyntheticDataset,
     DRY_BEAN_ARCHIVE_SHA256,
     DRY_BEAN_URL,
     RealTabularDataset,
+    load_covertype,
     load_dry_bean,
     make_controlled_multiclass,
+    stratified_subsample,
 )
 from chf.metrics import classification_metrics, conditional_coverage_metrics
 from chf.scaling import (
@@ -51,6 +55,47 @@ def split_id(split: Any) -> str:
     return digest.hexdigest()[:16]
 
 
+def selection_data_indices(
+    config: Mapping[str, Any], split: Any, labels: np.ndarray, *, seed: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the train/tune rows available to feature selection.
+
+    Large real datasets may define a fixed compute budget. The resulting rows
+    remain strict subsets of their outer partitions, and calibration/test are
+    never sampled or exposed to selection.
+    """
+    budget = config.get("selection_budget", {})
+    train_limit = budget.get("train_max_samples")
+    tune_limit = budget.get("tune_max_samples")
+    train_indices = stratified_subsample(
+        split.train,
+        labels,
+        max_samples=None if train_limit is None else int(train_limit),
+        seed=seed + 70_001,
+    )
+    tune_indices = stratified_subsample(
+        split.tune,
+        labels,
+        max_samples=None if tune_limit is None else int(tune_limit),
+        seed=seed + 70_002,
+    )
+    return train_indices, tune_indices
+
+
+def selection_data_id(
+    train_indices: np.ndarray, tune_indices: np.ndarray
+) -> str:
+    """Return a stable identifier for the selection-only data budget."""
+    digest = hashlib.sha256()
+    for name, indices in (
+        ("selection_train", train_indices),
+        ("selection_tune", tune_indices),
+    ):
+        digest.update(name.encode("utf-8"))
+        digest.update(np.asarray(indices, dtype=np.int64).tobytes())
+    return digest.hexdigest()[:16]
+
+
 def code_version(repository_root: Path) -> str:
     """Return the current Git revision, marking an uncommitted worktree."""
     try:
@@ -79,6 +124,23 @@ def dataset_from_config(
     """Load the configured dataset without fitting any preprocessing."""
     dataset_config = config["dataset"]
     dataset_kind = str(dataset_config.get("kind", "controlled_synthetic"))
+    if dataset_kind == "covertype":
+        archive_path = Path(
+            dataset_config.get(
+                "archive_path", "outputs/_datasets/covertype.zip"
+            )
+        )
+        if not archive_path.is_absolute():
+            archive_path = (repository_root or Path.cwd()) / archive_path
+        return load_covertype(
+            archive_path,
+            source_url=str(dataset_config.get("source_url", COVERTYPE_URL)),
+            expected_sha256=str(
+                dataset_config.get(
+                    "archive_sha256", COVERTYPE_ARCHIVE_SHA256
+                )
+            ),
+        )
     if dataset_kind == "dry_bean":
         archive_path = Path(
             dataset_config.get(

@@ -22,6 +22,8 @@ from .protocol import (
     dataset_from_config,
     dataset_name,
     evaluate_logits,
+    selection_data_id,
+    selection_data_indices,
     split_id,
 )
 
@@ -40,11 +42,16 @@ def run_required_baselines(
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     identifier = split_id(split)
+    selection_train, selection_tune = selection_data_indices(
+        config, split, dataset.labels, seed=seed
+    )
+    selection_identifier = selection_data_id(selection_train, selection_tune)
     save_split_artifact(
         output_dir / "split_indices.npz", split, seed=seed,
         metadata={"experiment_name": config["experiment_name"],
                   "phase": int(config.get("phase", 5)),
-                  "split_id": identifier},
+                  "split_id": identifier,
+                  "selection_data_id": selection_identifier},
     )
 
     # Phase 4 is rerun in a private subdirectory so the proposed choices are
@@ -53,15 +60,23 @@ def run_required_baselines(
     proposed_path = proposed_dir / "progressive_consensus_paths.csv"
     if proposed_path.exists():
         progressive_paths = pd.read_csv(proposed_path)
+        valid_cached_selection = (
+            "selection_data_id" in progressive_paths
+            and progressive_paths["selection_data_id"].eq(
+                selection_identifier
+            ).all()
+        )
     else:
+        valid_cached_selection = False
+    if not valid_cached_selection:
         _, progressive_paths, _ = run_progressive_selection(
             config, proposed_dir, repository_root
         )
     proposed = progressive_paths.loc[progressive_paths["selected_for_final"]].copy()
-    train_x = dataset.features[split.train]
-    train_y = dataset.labels[split.train]
-    tune_x = dataset.features[split.tune]
-    tune_y = dataset.labels[split.tune]
+    train_x = dataset.features[selection_train]
+    train_y = dataset.labels[selection_train]
+    tune_x = dataset.features[selection_tune]
+    tune_y = dataset.labels[selection_tune]
     baseline_config = config.get("baselines", {})
     random_repetitions = int(baseline_config.get("random_repetitions", 10))
     permutation_repeats = int(baseline_config.get("permutation_repeats", 10))
@@ -104,7 +119,11 @@ def run_required_baselines(
                 selected = tuple(sorted(order[:target_size].astype(int).tolist()))
                 selection_rows.append(_selection_row(
                     model_name, method, target_size, selected, dataset.feature_names,
-                    ranking_source="train" if method in {"mutual_information", "rfe"} else "train+tune",
+                    ranking_source=(
+                        "selection_train"
+                        if method in {"mutual_information", "rfe"}
+                        else "selection_train+tune"
+                    ),
                     selection_seed=seed, scores=scores,
                 ))
             for repetition in range(random_repetitions):
@@ -121,13 +140,15 @@ def run_required_baselines(
             selected = tuple(json.loads(row["selected_indices"]))
             selection_rows.append(_selection_row(
                 model_name, f"conformal_harm_{row['method']}", len(selected), selected,
-                dataset.feature_names, ranking_source="train+tune_crossfit",
+                dataset.feature_names,
+                ranking_source="selection_train+tune_crossfit",
                 selection_seed=seed,
             ))
 
     selections = pd.DataFrame(selection_rows).drop_duplicates(
         ["model", "method", "target_size", "selected_indices", "repetition"]
     ).reset_index(drop=True)
+    selections["selection_data_id"] = selection_identifier
     results = _evaluate_frozen_selections(
         selections, config, dataset, split, seed, identifier, code_version(repository_root)
     )
@@ -135,6 +156,9 @@ def run_required_baselines(
     _write_outputs(
         selections, results, summary, output_dir, config,
         random_repetitions=random_repetitions,
+        selection_identifier=selection_identifier,
+        selection_train_size=len(selection_train),
+        selection_tune_size=len(selection_tune),
     )
     return selections, results, summary
 
@@ -215,6 +239,8 @@ def _summarize(results: pd.DataFrame) -> pd.DataFrame:
 def _write_outputs(
     selections: pd.DataFrame, results: pd.DataFrame, summary: pd.DataFrame,
     output_dir: Path, config: Mapping[str, Any], *, random_repetitions: int,
+    selection_identifier: str, selection_train_size: int,
+    selection_tune_size: int,
 ) -> None:
     selections.to_csv(output_dir / "baseline_selections.csv", index=False)
     results.to_csv(output_dir / "baseline_final_results.csv", index=False)
@@ -236,11 +262,18 @@ def _write_outputs(
         "fresh_thresholds_finite": bool(np.isfinite(results["threshold"]).all()),
         "final_metrics_finite": bool(np.isfinite(results[["accuracy", "coverage", "mean_size", "sscv"]]).all().all()),
         "subsets_frozen_before_calibration": bool(results["subset_frozen_before_final_calibration"].all()),
+        "identical_selection_data": bool(
+            selections["selection_data_id"].eq(selection_identifier).all()
+            and results["selection_data_id"].eq(selection_identifier).all()
+        ),
     }
     record = {
         "status": "PASS" if all(checks.values()) else "FAIL", "checks": checks,
         "protocol": {
             "classifier_fit_partition": "train", "ranking_partitions": "train or train+tune",
+            "selection_data_id": selection_identifier,
+            "selection_train_rows": selection_train_size,
+            "selection_tune_rows": selection_tune_size,
             "subset_sizes": "matched to Phase 4 frozen proposed sizes",
             "final_calibration_access": "once after every subset was frozen",
             "final_test_access": "once after every subset was frozen",

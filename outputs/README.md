@@ -49,3 +49,11 @@ Phase 6 additionally writes:
 - `scaling_interaction_summary.csv`: descriptive interaction counts and aggregate gains by subset type and pipeline.
 - `scaling_interaction_proposed.png`: the primary all-features versus proposed-selection interaction plot.
 - `scaling_interaction_protocol.json`: executable factorial, leakage, numerical, and decomposition checks.
+
+Phase 7 real-data benchmarks additionally write:
+
+- `dataset_provenance.json`: pinned source checksum, declared schema, feature manifest, and split identifiers.
+- `phase7_split_indices.npz` and `phase7_split_distribution.csv`: the full outer split and class audit.
+- `phase7_selection_indices.npz`: the exact train/tune rows available to selection under any declared compute budget.
+- `phase7_main_table.csv`: deterministic final Base/TS/ConfTS x APS/RAPS results.
+- `phase7_protocol.json`: source, split, selection-budget, leakage, coverage, and numerical-safety checks.

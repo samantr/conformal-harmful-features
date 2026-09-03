@@ -25,6 +25,8 @@ from .protocol import (
     dataset_from_config,
     dataset_name,
     evaluate_logits,
+    selection_data_id,
+    selection_data_indices,
     split_id,
 )
 
@@ -224,11 +226,16 @@ def run_progressive_selection(
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     outer_split_id = split_id(split)
+    selection_train, selection_tune = selection_data_indices(
+        config, split, dataset.labels, seed=seed
+    )
+    selection_identifier = selection_data_id(selection_train, selection_tune)
     save_split_artifact(
         output_dir / "split_indices.npz", split, seed=seed,
         metadata={"experiment_name": config["experiment_name"],
                   "phase": int(config.get("phase", 4)),
-                  "split_id": outer_split_id},
+                  "split_id": outer_split_id,
+                  "selection_data_id": selection_identifier},
     )
     selection_config = config.get("progressive_selection", {})
     harm_config = config.get("harm", {})
@@ -249,7 +256,7 @@ def run_progressive_selection(
     resample_seeds = [seed + 300_000 + 997 * index for index in range(resample_count)]
     evidence_folds = [
         make_tuning_evidence_folds(
-            dataset.labels[split.tune], n_folds=crossfit_folds,
+            dataset.labels[selection_tune], n_folds=crossfit_folds,
             scale_share_of_remainder=scale_share, seed=value,
         )
         for value in resample_seeds
@@ -269,10 +276,10 @@ def run_progressive_selection(
 
     for model_name, model_config in config["models"].items():
         evaluator = _TuningSubsetEvaluator(
-            features_train=dataset.features[split.train],
-            labels_train=dataset.labels[split.train],
-            features_tune=dataset.features[split.tune],
-            labels_tune=dataset.labels[split.tune],
+            features_train=dataset.features[selection_train],
+            labels_train=dataset.labels[selection_train],
+            features_tune=dataset.features[selection_tune],
+            labels_tune=dataset.labels[selection_tune],
             model_config=model_config,
             config=config,
             evidence_folds=evidence_folds,
@@ -310,6 +317,7 @@ def run_progressive_selection(
                 pipeline.insert(0, "model", model_name)
                 pipeline.insert(1, "method", method)
                 pipeline.insert(2, "step", row["step"])
+                pipeline["selection_data_id"] = selection_identifier
                 pipeline["n_removed"] = row["n_removed"]
                 pipeline["removed_feature"] = row["removed_feature"]
                 pipeline["selected_indices"] = json.dumps(row["selected_indices"])
@@ -318,6 +326,7 @@ def run_progressive_selection(
                 consensus_rows.append({
                     "model": model_name,
                     "method": method,
+                    "selection_data_id": selection_identifier,
                     **row,
                     "selected_indices": json.dumps(row["selected_indices"]),
                     "selected_features": json.dumps(
@@ -340,11 +349,13 @@ def run_progressive_selection(
         config=config, dataset=dataset, split=split, selected_rows=selected_rows,
         model_configs=config["models"], seed=seed, split_identifier=outer_split_id,
         version=code_version(repository_root),
+        selection_identifier=selection_identifier,
     )
     _write_outputs(
         paths, consensus_paths, final, output_dir, config, constraints,
         resample_count, crossfit_folds, max_removals,
         selection_score, selection_scaling,
+        selection_identifier, len(selection_train), len(selection_tune),
     )
     return paths, consensus_paths, final
 
@@ -468,6 +479,7 @@ def _final_evaluation(
     *, config: Mapping[str, Any], dataset: Any, split: Any,
     selected_rows: list[dict[str, Any]], model_configs: Mapping[str, Any],
     seed: int, split_identifier: str, version: str,
+    selection_identifier: str,
 ) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     all_indices = tuple(range(len(dataset.feature_names)))
@@ -505,6 +517,7 @@ def _final_evaluation(
             "experiment": config["experiment_name"], "dataset": dataset_name(dataset),
             "model": model_name, "method": method, "seed": seed,
             "split_id": split_identifier, "selected_indices": json.dumps(selected),
+            "selection_data_id": selection_identifier,
             "selected_features": json.dumps([dataset.feature_names[i] for i in selected]),
             "n_features": len(selected), "classifier_refit": True,
             "subset_frozen_before_final_calibration": True,
@@ -539,6 +552,8 @@ def _write_outputs(
     output_dir: Path, config: Mapping[str, Any], constraints: HarmConstraints,
     resample_count: int, crossfit_folds: int, max_removals: int,
     selection_score: str, selection_scaling: str,
+    selection_identifier: str, selection_train_size: int,
+    selection_tune_size: int,
 ) -> None:
     paths.to_csv(output_dir / "progressive_pipeline_paths.csv", index=False)
     consensus_paths.to_csv(output_dir / "progressive_consensus_paths.csv", index=False)
@@ -573,6 +588,9 @@ def _write_outputs(
         "protocol": {
             "classifier_fit_partition": "outer train",
             "ranking_and_subset_size_partition": "outer tune only",
+            "selection_data_id": selection_identifier,
+            "selection_train_rows": selection_train_size,
+            "selection_tune_rows": selection_tune_size,
             "selection_evidence": f"{resample_count}x{crossfit_folds} cross-fitting",
             "selection_pipeline": f"{selection_scaling}+{selection_score}",
             "final_calibration_access": "once after subset freeze",

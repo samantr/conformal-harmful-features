@@ -1,14 +1,19 @@
 from .artifacts import SplitArtifact, load_split_artifact, save_split_artifact
 from .real import (
+    COVERTYPE_ARCHIVE_SHA256,
+    COVERTYPE_CLASS_NAMES,
+    COVERTYPE_FEATURE_NAMES,
+    COVERTYPE_URL,
     DRY_BEAN_ARCHIVE_SHA256,
     DRY_BEAN_CLASS_NAMES,
     DRY_BEAN_FEATURE_NAMES,
     DRY_BEAN_URL,
     RealTabularDataset,
     TabularFeature,
+    load_covertype,
     load_dry_bean,
 )
-from .splits import FourWaySplit, make_four_way_split
+from .splits import FourWaySplit, make_four_way_split, stratified_subsample
 from .synthetic import (
     ControlledSyntheticDataset,
     SyntheticFeature,
@@ -20,6 +25,10 @@ __all__ = [
     "FourWaySplit",
     "SplitArtifact",
     "ControlledSyntheticDataset",
+    "COVERTYPE_ARCHIVE_SHA256",
+    "COVERTYPE_CLASS_NAMES",
+    "COVERTYPE_FEATURE_NAMES",
+    "COVERTYPE_URL",
     "DRY_BEAN_ARCHIVE_SHA256",
     "DRY_BEAN_CLASS_NAMES",
     "DRY_BEAN_FEATURE_NAMES",
@@ -29,8 +38,10 @@ __all__ = [
     "TabularFeature",
     "class_separation_ratios",
     "load_split_artifact",
+    "load_covertype",
     "load_dry_bean",
     "make_controlled_multiclass",
     "make_four_way_split",
     "save_split_artifact",
+    "stratified_subsample",
 ]

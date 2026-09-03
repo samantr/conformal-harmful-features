@@ -8,7 +8,10 @@
 - ✅ **Phase 1 - Controlled synthetic data:** complete; see [`phase-1-validation.md`](phase-1-validation.md).
 - ✅ **Phase 2 - Single-feature interventions:** complete; see [`phase-2-validation.md`](phase-2-validation.md).
 - ✅ **Phase 3 - Define conformal harm:** complete; see [`phase-3-validation.md`](phase-3-validation.md).
-- ⏭️ **Phase 4 - Progressive subset selection:** next.
+- ✅ **Phase 4 - Progressive subset selection:** complete; see [`phase-4-validation.md`](phase-4-validation.md).
+- ✅ **Phase 5 - Required baselines:** complete; see [`phase-5-validation.md`](phase-5-validation.md).
+- ✅ **Phase 6 - Interaction with scaling:** complete; see [`phase-6-validation.md`](phase-6-validation.md).
+- 🚧 **Phase 7 - Real datasets:** Dry Bean and Covertype complete; Human Activity Recognition is next. See [`phase-7-validation.md`](phase-7-validation.md).
 
 **Working title:** *Conformal-Harmful Features: Feature Selection for Efficient Adaptive Prediction Sets*
 

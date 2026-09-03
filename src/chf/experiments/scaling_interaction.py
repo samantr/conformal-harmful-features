@@ -17,6 +17,8 @@ from .protocol import (
     dataset_from_config,
     dataset_name,
     evaluate_logits,
+    selection_data_id,
+    selection_data_indices,
     split_id,
 )
 
@@ -52,11 +54,6 @@ def run_scaling_interaction(
     seed = int(config["seed"])
     output_dir.mkdir(parents=True, exist_ok=True)
     dataset = dataset_from_config(config, repository_root)
-    source_path = selections_path or output_dir / "baseline_selections.csv"
-    selections = _load_frozen_selections(
-        source_path, config, n_total_features=len(dataset.feature_names)
-    )
-
     split_values = config["split"]
     split = make_four_way_split(
         dataset.labels,
@@ -67,6 +64,17 @@ def run_scaling_interaction(
         seed,
     )
     identifier = split_id(split)
+    selection_train, selection_tune = selection_data_indices(
+        config, split, dataset.labels, seed=seed
+    )
+    selection_identifier = selection_data_id(selection_train, selection_tune)
+    source_path = selections_path or output_dir / "baseline_selections.csv"
+    selections = _load_frozen_selections(
+        source_path,
+        config,
+        n_total_features=len(dataset.feature_names),
+        expected_selection_data_id=selection_identifier,
+    )
     save_split_artifact(
         output_dir / "scaling_interaction_split_indices.npz",
         split,
@@ -75,6 +83,7 @@ def run_scaling_interaction(
             "experiment_name": config["experiment_name"],
             "phase": int(config.get("phase", 6)),
             "split_id": identifier,
+            "selection_data_id": selection_identifier,
         },
     )
 
@@ -105,6 +114,7 @@ def run_scaling_interaction(
         config=config,
         selections_path=source_path,
         tolerance=tolerance,
+        selection_identifier=selection_identifier,
     )
     return results, interactions, rank_stability, summary
 
@@ -114,6 +124,7 @@ def _load_frozen_selections(
     config: Mapping[str, Any],
     *,
     n_total_features: int,
+    expected_selection_data_id: str,
 ) -> pd.DataFrame:
     if not selections_path.exists():
         raise FileNotFoundError(
@@ -132,6 +143,7 @@ def _load_frozen_selections(
         "selection_seed",
         "repetition",
         "subset_frozen_before_final_calibration",
+        "selection_data_id",
     }
     missing_columns = required_columns.difference(selections.columns)
     if missing_columns:
@@ -163,6 +175,10 @@ def _load_frozen_selections(
         raise ValueError("selection models do not match the configured model families")
     if (selections["selection_seed"].astype(int) != int(config["seed"])).any():
         raise ValueError("selection seeds do not match the configured paired seed")
+    if not selections["selection_data_id"].eq(expected_selection_data_id).all():
+        raise ValueError(
+            "selection artifact does not match the configured selection data"
+        )
     if not selections["subset_frozen_before_final_calibration"].astype(bool).all():
         raise ValueError("every Phase 6 subset must already be frozen")
     if selections.duplicated(list(SELECTION_KEY)).any():
@@ -585,6 +601,7 @@ def _write_outputs(
     config: Mapping[str, Any],
     selections_path: Path,
     tolerance: float,
+    selection_identifier: str,
 ) -> None:
     results.to_csv(output_dir / "scaling_interaction_results.csv", index=False)
     interactions.to_csv(
@@ -652,6 +669,9 @@ def _write_outputs(
         "subsets_frozen_before_calibration": bool(
             results["subset_frozen_before_final_calibration"].all()
         ),
+        "identical_selection_data": bool(
+            results["selection_data_id"].eq(selection_identifier).all()
+        ),
         "fresh_thresholds_and_metrics_finite": bool(
             np.isfinite(results[core_metrics].to_numpy()).all()
         ),
@@ -683,6 +703,7 @@ def _write_outputs(
             "temperature_tuning_partition": "outer tune only",
             "confts_tuning": "disjoint threshold/loss halves inside outer tune",
             "feature_subsets": "all requested deterministic Phase 5 selections",
+            "selection_data_id": selection_identifier,
             "phase_5_test_results_used_for_method_choice": False,
             "final_calibration_access": "once per frozen scaling-score pipeline",
             "final_test_access": "once per frozen scaling-score pipeline",
