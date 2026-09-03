@@ -1,4 +1,14 @@
 from .artifacts import SplitArtifact, load_split_artifact, save_split_artifact
+from .har import (
+    HAR_CLASS_NAMES,
+    HAR_N_CLASSES,
+    HAR_N_FEATURES,
+    HAR_N_SAMPLES,
+    HAR_N_SUBJECTS,
+    HAR_URL,
+    HumanActivityRecognitionDataset,
+    load_human_activity_recognition,
+)
 from .real import (
     COVERTYPE_ARCHIVE_SHA256,
     COVERTYPE_CLASS_NAMES,
@@ -13,7 +23,12 @@ from .real import (
     load_covertype,
     load_dry_bean,
 )
-from .splits import FourWaySplit, make_four_way_split, stratified_subsample
+from .splits import (
+    FourWaySplit,
+    make_four_way_split,
+    make_group_four_way_split,
+    stratified_subsample,
+)
 from .synthetic import (
     ControlledSyntheticDataset,
     SyntheticFeature,
@@ -33,6 +48,13 @@ __all__ = [
     "DRY_BEAN_CLASS_NAMES",
     "DRY_BEAN_FEATURE_NAMES",
     "DRY_BEAN_URL",
+    "HAR_CLASS_NAMES",
+    "HAR_N_CLASSES",
+    "HAR_N_FEATURES",
+    "HAR_N_SAMPLES",
+    "HAR_N_SUBJECTS",
+    "HAR_URL",
+    "HumanActivityRecognitionDataset",
     "RealTabularDataset",
     "SyntheticFeature",
     "TabularFeature",
@@ -40,8 +62,10 @@ __all__ = [
     "load_split_artifact",
     "load_covertype",
     "load_dry_bean",
+    "load_human_activity_recognition",
     "make_controlled_multiclass",
     "make_four_way_split",
+    "make_group_four_way_split",
     "save_split_artifact",
     "stratified_subsample",
 ]
