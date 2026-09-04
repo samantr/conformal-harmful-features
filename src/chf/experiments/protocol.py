@@ -33,6 +33,8 @@ from chf.scaling import (
     tune_temperature,
 )
 
+from .coverage_validation import grouped_coverage_metrics
+
 
 REFERENCE_METRICS = (
     "accuracy",
@@ -276,6 +278,7 @@ def evaluate_logits(
     seed: int,
     included_scores: tuple[str, ...] | None = None,
     included_scalings: tuple[str, ...] | None = None,
+    test_groups: np.ndarray | None = None,
 ) -> list[dict[str, Any]]:
     """Evaluate one fitted-model/data combination under the shared CP protocol.
 
@@ -375,6 +378,27 @@ def evaluate_logits(
                 k_reg=raps_k_reg,
                 lambda_reg=raps_lambda,
             )
+            group_metrics: dict[str, Any] = {}
+            if test_groups is not None:
+                group_metrics = grouped_coverage_metrics(
+                    prediction_set_result.included,
+                    labels_test,
+                    test_groups,
+                    target=1.0 - alpha,
+                    confidence_level=float(
+                        config.get("coverage_validation", {}).get(
+                            "confidence_level", 0.95
+                        )
+                    ),
+                )
+                for detail_column in (
+                    "group_coverages",
+                    "group_covered_counts",
+                    "group_sample_counts",
+                ):
+                    group_metrics[detail_column] = json.dumps(
+                        group_metrics[detail_column], sort_keys=True
+                    )
             classification = classification_metrics(
                 probability_test, labels_test, ece_bins=ece_bins
             )
@@ -419,6 +443,7 @@ def evaluate_logits(
                     "test_zero_count": test_diagnostics.zero_count,
                     "test_exactly_one_count": test_diagnostics.exactly_one_count,
                     "test_mean_max_probability": test_diagnostics.mean_max_probability,
+                    **group_metrics,
                 }
             )
     return rows

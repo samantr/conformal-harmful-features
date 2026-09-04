@@ -12,6 +12,11 @@ from chf.data import save_split_artifact
 from chf.models import fit_classifier
 from chf.scaling import probabilities_from_logits
 
+from .coverage_validation import (
+    GROUP_COVERAGE_COLUMNS,
+    coverage_validation_mode,
+    validate_coverage_results,
+)
 from .protocol import (
     code_version,
     dataset_from_config,
@@ -37,6 +42,24 @@ DEFAULT_METHODS = (
     "conformal_harm_recursive",
 )
 SELECTION_KEY = ("model", "method", "target_size", "selected_indices")
+RESULT_KEY = (*SELECTION_KEY, "scaling", "score")
+REPLAY_METRICS = (
+    "temperature",
+    "threshold",
+    "accuracy",
+    "macro_f1",
+    "nll",
+    "ece",
+    "coverage",
+    "mean_size",
+    "median_size",
+    "size_p90",
+    "empty_set_rate",
+    "full_set_rate",
+    "sscv",
+    "class_coverage_gap",
+    "class_coverage_max_deviation",
+)
 
 
 def run_scaling_interaction(
@@ -45,6 +68,8 @@ def run_scaling_interaction(
     repository_root: Path,
     *,
     selections_path: Path | None = None,
+    resume: bool = False,
+    revalidate_only: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Evaluate frozen Phase 5 subsets under Base/TS/ConfTS x APS/RAPS.
 
@@ -80,15 +105,57 @@ def run_scaling_interaction(
         },
     )
 
-    results = _evaluate_frozen_selections(
-        selections=selections,
-        config=config,
-        dataset=dataset,
-        split=split,
-        seed=seed,
-        identifier=identifier,
-        version=code_version(repository_root),
-    )
+    results_path = output_dir / "scaling_interaction_results.csv"
+    reusable = None
+    if (resume or revalidate_only) and results_path.exists():
+        _validate_replay_config(
+            output_dir / "scaling_interaction_resolved_config.yaml", config
+        )
+        reusable = _load_reusable_results(
+            results_path,
+            selections=selections,
+            split_identifier=identifier,
+            selection_identifier=selection_identifier,
+        )
+        grouped_columns_present = set(GROUP_COVERAGE_COLUMNS).issubset(
+            reusable.columns
+        )
+        if coverage_validation_mode(config) == "fixed" or grouped_columns_present:
+            results = reusable
+            print(
+                f"Phase 6 replay: revalidating {len(results)} frozen result rows",
+                flush=True,
+            )
+        elif revalidate_only:
+            raise ValueError(
+                "revalidation-only requested, but the saved Phase 6 results "
+                "predate grouped coverage metrics; use --resume for a Phase 6-only refit"
+            )
+        else:
+            results = _evaluate_frozen_selections(
+                selections=selections,
+                config=config,
+                dataset=dataset,
+                split=split,
+                seed=seed,
+                identifier=identifier,
+                version=code_version(repository_root),
+            )
+            _assert_recomputed_results_match(reusable, results)
+    elif revalidate_only:
+        raise FileNotFoundError(
+            f"saved Phase 6 results not found for revalidation: {results_path}"
+        )
+    else:
+        results = _evaluate_frozen_selections(
+            selections=selections,
+            config=config,
+            dataset=dataset,
+            split=split,
+            seed=seed,
+            identifier=identifier,
+            version=code_version(repository_root),
+        )
     tolerance = float(
         config.get("scaling_interaction", {}).get(
             "descriptive_interaction_tolerance", 0.01
@@ -108,6 +175,7 @@ def run_scaling_interaction(
         selections_path=source_path,
         tolerance=tolerance,
         selection_identifier=selection_identifier,
+        validation_version=code_version(repository_root),
     )
     return results, interactions, rank_stability, summary
 
@@ -197,6 +265,97 @@ def _load_frozen_selections(
     return selections.reset_index(drop=True)
 
 
+def _load_reusable_results(
+    results_path: Path,
+    *,
+    selections: pd.DataFrame,
+    split_identifier: str,
+    selection_identifier: str,
+) -> pd.DataFrame:
+    results = pd.read_csv(results_path)
+    required = {
+        *RESULT_KEY,
+        "split_id",
+        "selection_data_id",
+        "coverage",
+        "alpha",
+    }
+    missing = required.difference(results.columns)
+    if missing:
+        raise ValueError(
+            f"saved Phase 6 results are missing columns: {sorted(missing)}"
+        )
+    if not results["split_id"].eq(split_identifier).all():
+        raise ValueError("saved Phase 6 results use a different outer split")
+    if not results["selection_data_id"].eq(selection_identifier).all():
+        raise ValueError("saved Phase 6 results use different selection data")
+    expected_keys = {
+        (*key, scaling, score)
+        for key in selections[list(SELECTION_KEY)].itertuples(index=False, name=None)
+        for scaling in SCALINGS
+        for score in SCORES
+    }
+    observed_keys = set(
+        results[list(RESULT_KEY)].itertuples(index=False, name=None)
+    )
+    if observed_keys != expected_keys or len(results) != len(expected_keys):
+        raise ValueError("saved Phase 6 results do not match the frozen selections")
+    return results
+
+
+def _validate_replay_config(
+    resolved_config_path: Path,
+    config: Mapping[str, Any],
+) -> None:
+    if not resolved_config_path.exists():
+        raise FileNotFoundError(
+            "saved Phase 6 resolved config is required for safe replay: "
+            f"{resolved_config_path}"
+        )
+    saved = yaml.safe_load(resolved_config_path.read_text(encoding="utf-8"))
+    current = dict(config)
+    # Validation metadata does not affect model fitting, conformal scores, or
+    # aggregate evidence, so legacy HAR artifacts may be upgraded safely.
+    saved.pop("coverage_validation", None)
+    current.pop("coverage_validation", None)
+    if saved != current:
+        raise ValueError("saved Phase 6 results were produced by a different config")
+
+
+def _assert_recomputed_results_match(
+    saved: pd.DataFrame,
+    recomputed: pd.DataFrame,
+    *,
+    absolute_tolerance: float = 1e-10,
+) -> None:
+    """Protect frozen aggregate evidence before adding grouped diagnostics."""
+    saved_indexed = saved.set_index(list(RESULT_KEY)).sort_index()
+    recomputed_indexed = recomputed.set_index(list(RESULT_KEY)).sort_index()
+    if not saved_indexed.index.equals(recomputed_indexed.index):
+        raise RuntimeError("recomputed Phase 6 result keys differ from frozen results")
+    mismatches: list[str] = []
+    for column in REPLAY_METRICS:
+        if column not in saved_indexed or column not in recomputed_indexed:
+            continue
+        saved_values = saved_indexed[column].to_numpy(dtype=float)
+        recomputed_values = recomputed_indexed[column].to_numpy(dtype=float)
+        if not np.allclose(
+            saved_values,
+            recomputed_values,
+            atol=absolute_tolerance,
+            rtol=absolute_tolerance,
+            equal_nan=True,
+        ):
+            maximum = float(np.nanmax(np.abs(saved_values - recomputed_values)))
+            mismatches.append(f"{column} (max absolute difference {maximum:.3g})")
+    if mismatches:
+        raise RuntimeError(
+            "Phase 6-only refit did not reproduce the frozen aggregate evidence; "
+            "existing artifacts were not overwritten. Mismatches: "
+            + ", ".join(mismatches)
+        )
+
+
 def _selection_type(method: str) -> str:
     if method == "all_features":
         return "all_features"
@@ -238,6 +397,12 @@ def _evaluate_frozen_selections(
     evaluated_cache: dict[
         tuple[str, tuple[int, ...]], list[dict[str, Any]]
     ] = {}
+    test_groups = None
+    if coverage_validation_mode(config) == "grouped":
+        dataset_groups = getattr(dataset, "groups", None)
+        if dataset_groups is None:
+            raise ValueError("grouped coverage validation requires dataset groups")
+        test_groups = np.asarray(dataset_groups)[split.test]
 
     for selection in selections.to_dict("records"):
         selected = tuple(json.loads(selection["selected_indices"]))
@@ -290,6 +455,7 @@ def _evaluate_frozen_selections(
                 seed=seed + 600_000,
                 included_scores=SCORES,
                 included_scalings=SCALINGS,
+                test_groups=test_groups,
             )
         reference_test_logits = reference_logits[model_name]
         top1_disagreement = float(
@@ -583,6 +749,62 @@ def _summarize_interactions(interactions: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
+def subject_coverage_table(results: pd.DataFrame) -> pd.DataFrame:
+    """Expand replayable grouped coverage details into one row per test subject."""
+    missing = set(GROUP_COVERAGE_COLUMNS).difference(results.columns)
+    if missing:
+        raise ValueError(
+            "subject coverage artifact requires grouped result columns; "
+            f"missing: {sorted(missing)}"
+        )
+    identity_columns = [
+        "experiment",
+        "dataset",
+        "seed",
+        "split_id",
+        "selection_data_id",
+        "code_version",
+        "model",
+        "method",
+        "selection_type",
+        "target_size",
+        "n_features",
+        "selected_indices",
+        "scaling",
+        "score",
+        "alpha",
+    ]
+    rows: list[dict[str, Any]] = []
+    for result in results.to_dict("records"):
+        coverages = json.loads(result["group_coverages"])
+        covered_counts = json.loads(result["group_covered_counts"])
+        sample_counts = json.loads(result["group_sample_counts"])
+        if set(coverages) != set(covered_counts) or set(coverages) != set(sample_counts):
+            raise ValueError("saved grouped coverage details use inconsistent group IDs")
+        if len(coverages) != int(result["group_coverage_count"]):
+            raise ValueError("saved grouped coverage count disagrees with details")
+        metadata = {column: result[column] for column in identity_columns}
+        for group_id in sorted(coverages, key=str):
+            rows.append(
+                {
+                    **metadata,
+                    "subject_id": group_id,
+                    "window_count": int(sample_counts[group_id]),
+                    "covered_window_count": int(covered_counts[group_id]),
+                    "subject_coverage": float(coverages[group_id]),
+                    "group_macro_coverage": float(result["group_macro_coverage"]),
+                    "group_coverage_ci_lower": float(
+                        result["group_coverage_ci_lower"]
+                    ),
+                    "group_coverage_ci_upper": float(
+                        result["group_coverage_ci_upper"]
+                    ),
+                    "group_coverage_status": result["group_coverage_status"],
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 def _write_outputs(
     *,
     selections: pd.DataFrame,
@@ -595,8 +817,17 @@ def _write_outputs(
     selections_path: Path,
     tolerance: float,
     selection_identifier: str,
+    validation_version: str,
 ) -> None:
+    coverage_validation = validate_coverage_results(results, config)
+    subject_coverage = None
+    if coverage_validation_mode(config) == "grouped":
+        subject_coverage = subject_coverage_table(results)
     results.to_csv(output_dir / "scaling_interaction_results.csv", index=False)
+    if subject_coverage is not None:
+        subject_coverage.to_csv(
+            output_dir / "scaling_interaction_subject_coverage.csv", index=False
+        )
     interactions.to_csv(
         output_dir / "scaling_interaction_decomposition.csv", index=False
     )
@@ -645,9 +876,6 @@ def _write_outputs(
         "test_mean_max_probability",
         "test_mean_entropy",
     ]
-    coverage_tolerance = float(
-        config.get("stability", {}).get("max_coverage_deviation", 0.03)
-    )
     checks = {
         "all_feature_set_types_present": set(results["selection_type"])
         == {"all_features", "standard_selection", "proposed_selection"},
@@ -668,10 +896,7 @@ def _write_outputs(
         "fresh_thresholds_and_metrics_finite": bool(
             np.isfinite(results[core_metrics].to_numpy()).all()
         ),
-        "coverage_within_stability_tolerance": bool(
-            ((results["coverage"] - (1 - results["alpha"])).abs()
-             <= coverage_tolerance + 1e-12).all()
-        ),
+        coverage_validation.check_name: coverage_validation.hard_pass,
         "no_zero_or_saturated_probabilities": bool(
             (results[numerical_safety_columns] == 0).all().all()
         ),
@@ -708,12 +933,20 @@ def _write_outputs(
             "interaction_labels": "descriptive only; inference deferred to Phase 8",
         },
         "descriptive_interaction_tolerance": tolerance,
-        "coverage_target": 1.0 - float(config["conformal"]["alpha"]),
-        "coverage_stability_tolerance": coverage_tolerance,
+        "coverage_validation": {
+            "scientific_status": coverage_validation.scientific_status,
+            "policy": coverage_validation.policy,
+            "diagnostics": coverage_validation.diagnostics,
+        },
         "phase_5_selection_artifact": str(selections_path),
         "phase_5_selection_sha256": selection_digest,
+        "validation_code_version": validation_version,
+        "result_code_versions": sorted(results["code_version"].unique().tolist()),
         "observed_selection_rows": len(selections),
         "observed_result_rows": len(results),
+        "observed_subject_coverage_rows": (
+            0 if subject_coverage is None else len(subject_coverage)
+        ),
         "observed_interaction_rows": len(interactions),
         "expected_interaction_rows": expected_interactions,
     }

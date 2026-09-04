@@ -9,6 +9,7 @@ import yaml
 from chf.data import save_split_artifact
 
 from .baselines import run_required_baselines
+from .coverage_validation import coverage_validation_mode, validate_coverage_results
 from .protocol import (
     dataset_from_config,
     dataset_name,
@@ -21,7 +22,12 @@ from .scaling_interaction import SCALINGS, SCORES, run_scaling_interaction
 
 
 def run_real_dataset_benchmark(
-    config: Mapping[str, Any], output_dir: Path, repository_root: Path
+    config: Mapping[str, Any],
+    output_dir: Path,
+    repository_root: Path,
+    *,
+    resume: bool = False,
+    revalidate_only: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Run the frozen Phase 4-6 protocol on one configured real dataset.
 
@@ -66,14 +72,23 @@ def run_real_dataset_benchmark(
         json.dumps(provenance, indent=2, sort_keys=True), encoding="utf-8"
     )
 
-    selections, baseline_results, _ = run_required_baselines(
-        config, output_dir, repository_root
-    )
+    if resume or revalidate_only:
+        selections, baseline_results = _load_baseline_artifacts(
+            output_dir,
+            split_identifier=identifier,
+            selection_identifier=selection_identifier,
+        )
+    else:
+        selections, baseline_results, _ = run_required_baselines(
+            config, output_dir, repository_root
+        )
     factorial_results, interactions, rank_stability, _ = run_scaling_interaction(
         config,
         output_dir,
         repository_root,
         selections_path=output_dir / "baseline_selections.csv",
+        resume=resume,
+        revalidate_only=revalidate_only,
     )
     main_table = _main_table(factorial_results)
     main_table.to_csv(output_dir / "phase7_main_table.csv", index=False)
@@ -93,6 +108,70 @@ def run_real_dataset_benchmark(
         selection_identifier=selection_identifier,
     )
     return selections, factorial_results, interactions, main_table
+
+
+def _load_baseline_artifacts(
+    output_dir: Path,
+    *,
+    split_identifier: str,
+    selection_identifier: str,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    selections_path = output_dir / "baseline_selections.csv"
+    results_path = output_dir / "baseline_final_results.csv"
+    missing_paths = [
+        str(path) for path in (selections_path, results_path) if not path.exists()
+    ]
+    if missing_paths:
+        raise FileNotFoundError(
+            "resume requires completed Phase 5 artifacts; missing: "
+            + ", ".join(missing_paths)
+        )
+    selections = pd.read_csv(selections_path)
+    results = pd.read_csv(results_path)
+    baseline_key = [
+        "model",
+        "method",
+        "target_size",
+        "selected_indices",
+        "repetition",
+    ]
+    required_selection_columns = {
+        *baseline_key,
+        "selection_data_id",
+        "subset_frozen_before_final_calibration",
+    }
+    required_result_columns = {
+        *required_selection_columns,
+        "split_id",
+    }
+    if missing := required_selection_columns.difference(selections.columns):
+        raise ValueError(
+            f"saved Phase 5 selections are missing columns: {sorted(missing)}"
+        )
+    if missing := required_result_columns.difference(results.columns):
+        raise ValueError(
+            f"saved Phase 5 results are missing columns: {sorted(missing)}"
+        )
+    for name, frame in (("selections", selections), ("results", results)):
+        if "selection_data_id" not in frame:
+            raise ValueError(f"saved Phase 5 {name} lack selection_data_id")
+        if not frame["selection_data_id"].eq(selection_identifier).all():
+            raise ValueError(f"saved Phase 5 {name} use different selection data")
+    if "split_id" not in results or not results["split_id"].eq(
+        split_identifier
+    ).all():
+        raise ValueError("saved Phase 5 results use a different outer split")
+    if not results["subset_frozen_before_final_calibration"].astype(bool).all():
+        raise ValueError("saved Phase 5 results contain an unfrozen subset")
+    if not selections["subset_frozen_before_final_calibration"].astype(bool).all():
+        raise ValueError("saved Phase 5 selections contain an unfrozen subset")
+    selection_keys = set(
+        selections[baseline_key].itertuples(index=False, name=None)
+    )
+    result_keys = set(results[baseline_key].itertuples(index=False, name=None))
+    if selection_keys != result_keys or len(results) != len(selections):
+        raise ValueError("saved Phase 5 selections and results do not match")
+    return selections, results
 
 
 def _validate_dataset_declaration(config: Mapping[str, Any], dataset: Any) -> None:
@@ -180,6 +259,7 @@ def _dataset_provenance(
             "tune": int(len(selection_tune)),
         },
         "selection_budget": dict(config.get("selection_budget", {})),
+        "coverage_validation": dict(config.get("coverage_validation", {})),
         "preprocessing": (
             "selection models fit preprocessing on selection-train only; "
             "frozen final models refit preprocessing on full outer train"
@@ -239,6 +319,14 @@ def _main_table(results: pd.DataFrame) -> pd.DataFrame:
         "accuracy_loss_vs_all",
         "mean_size_reduction_vs_all",
     ]
+    grouped_columns = [
+        "group_macro_coverage",
+        "group_coverage_ci_lower",
+        "group_coverage_ci_upper",
+        "group_coverage_status",
+    ]
+    if set(grouped_columns).issubset(results.columns):
+        columns.extend(grouped_columns)
     deterministic = results.loc[
         results["repetition"].astype(int) == -1, columns
     ].rename(
@@ -270,10 +358,15 @@ def _write_protocol_record(
 ) -> None:
     deterministic = selections.loc[selections["repetition"].astype(int) == -1]
     expected_factorial_rows = len(deterministic) * len(SCALINGS) * len(SCORES)
-    target = 1.0 - float(config["conformal"]["alpha"])
-    coverage_tolerance = float(
-        config.get("stability", {}).get("max_coverage_deviation", 0.03)
+    coverage_frames = [factorial_results]
+    if coverage_validation_mode(config) == "fixed":
+        coverage_frames.append(baseline_results)
+    coverage_validation = validate_coverage_results(
+        pd.concat(coverage_frames, ignore_index=True), config
     )
+    coverage_check_name = coverage_validation.check_name
+    if coverage_validation_mode(config) == "fixed":
+        coverage_check_name = "coverage_within_sampling_tolerance"
     class_counts = _split_distribution(dataset, split).groupby("partition").size()
     required_methods = {
         "all_features",
@@ -335,14 +428,7 @@ def _write_protocol_record(
                 ]
             ).all().all()
         ),
-        "coverage_within_sampling_tolerance": bool(
-            factorial_results["coverage"].sub(target).abs().le(coverage_tolerance).all()
-            and baseline_results["coverage"]
-            .sub(target)
-            .abs()
-            .le(coverage_tolerance)
-            .all()
-        ),
+        coverage_check_name: coverage_validation.hard_pass,
         "no_extreme_probability_artifacts": bool(
             factorial_results[
                 [
@@ -392,6 +478,11 @@ def _write_protocol_record(
             ],
         },
         "split_id": identifier,
+        "coverage_validation": {
+            "scientific_status": coverage_validation.scientific_status,
+            "policy": coverage_validation.policy,
+            "diagnostics": coverage_validation.diagnostics,
+        },
         "observed_selection_rows": int(len(selections)),
         "observed_factorial_rows": int(len(factorial_results)),
         "expected_factorial_rows": int(expected_factorial_rows),
