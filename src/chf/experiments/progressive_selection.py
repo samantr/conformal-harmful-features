@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from chf.data import make_four_way_split, save_split_artifact
+from chf.data import save_split_artifact
 from chf.models import fit_classifier
 from chf.selection import (
     HarmConstraints,
@@ -25,6 +25,7 @@ from .protocol import (
     dataset_from_config,
     dataset_name,
     evaluate_logits,
+    experiment_split,
     selection_data_id,
     selection_data_indices,
     split_id,
@@ -218,12 +219,7 @@ def run_progressive_selection(
     """Compare one-shot and recursive removal, then perform one final test."""
     seed = int(config["seed"])
     dataset = dataset_from_config(config, repository_root)
-    split_values = config["split"]
-    split = make_four_way_split(
-        dataset.labels,
-        tuple(int(split_values[name]) for name in ("train", "tune", "calibration", "test")),
-        seed,
-    )
+    split = experiment_split(config, dataset)
     output_dir.mkdir(parents=True, exist_ok=True)
     outer_split_id = split_id(split)
     selection_train, selection_tune = selection_data_indices(

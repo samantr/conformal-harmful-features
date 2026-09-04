@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from chf.data import make_four_way_split, save_split_artifact
+from chf.data import save_split_artifact
 from chf.models import fit_classifier
 from chf.scaling import probabilities_from_logits
 
@@ -17,6 +17,7 @@ from .protocol import (
     dataset_from_config,
     dataset_name,
     evaluate_logits,
+    experiment_split,
     selection_data_id,
     selection_data_indices,
     split_id,
@@ -54,15 +55,7 @@ def run_scaling_interaction(
     seed = int(config["seed"])
     output_dir.mkdir(parents=True, exist_ok=True)
     dataset = dataset_from_config(config, repository_root)
-    split_values = config["split"]
-    split = make_four_way_split(
-        dataset.labels,
-        tuple(
-            int(split_values[name])
-            for name in ("train", "tune", "calibration", "test")
-        ),
-        seed,
-    )
+    split = experiment_split(config, dataset)
     identifier = split_id(split)
     selection_train, selection_tune = selection_data_indices(
         config, split, dataset.labels, seed=seed

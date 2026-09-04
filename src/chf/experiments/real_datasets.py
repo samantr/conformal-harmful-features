@@ -6,12 +6,13 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from chf.data import make_four_way_split, save_split_artifact
+from chf.data import save_split_artifact
 
 from .baselines import run_required_baselines
 from .protocol import (
     dataset_from_config,
     dataset_name,
+    experiment_split,
     selection_data_id,
     selection_data_indices,
     split_id,
@@ -31,7 +32,7 @@ def run_real_dataset_benchmark(
     output_dir.mkdir(parents=True, exist_ok=True)
     dataset = dataset_from_config(config, repository_root)
     _validate_dataset_declaration(config, dataset)
-    split = _make_split(config, dataset.labels)
+    split = experiment_split(config, dataset)
     identifier = split_id(split)
     seed = int(config["seed"])
     selection_train, selection_tune = selection_data_indices(
@@ -116,14 +117,26 @@ def _validate_dataset_declaration(config: Mapping[str, Any], dataset: Any) -> No
     if not np.isfinite(dataset.features).all():
         raise ValueError("Phase 7 features must all be finite before preprocessing")
 
-
-def _make_split(config: Mapping[str, Any], labels: np.ndarray) -> Any:
-    split_values = config["split"]
-    sizes = tuple(
-        int(split_values[name])
-        for name in ("train", "tune", "calibration", "test")
-    )
-    return make_four_way_split(labels, sizes, int(config["seed"]))
+    split_unit = str(config["split"].get("unit", "rows"))
+    if split_unit == "groups":
+        groups = getattr(dataset, "groups", None)
+        if groups is None:
+            raise ValueError("group-based Phase 7 split requires dataset groups")
+        observed_groups = len(np.unique(groups))
+        declared_groups = declaration.get("n_subjects")
+        if declared_groups is not None and observed_groups != int(declared_groups):
+            raise ValueError(
+                "dataset group count differs from config: "
+                f"expected {int(declared_groups)}, observed {observed_groups}"
+            )
+        configured_groups = sum(
+            int(config["split"][name])
+            for name in ("train", "tune", "calibration", "test")
+        )
+        if configured_groups != observed_groups:
+            raise ValueError(
+                "group split counts must sum to the observed number of groups"
+            )
 
 
 def _dataset_provenance(
@@ -135,7 +148,7 @@ def _dataset_provenance(
     selection_tune: np.ndarray,
     selection_identifier: str,
 ) -> dict[str, Any]:
-    return {
+    provenance: dict[str, Any] = {
         "experiment_name": config["experiment_name"],
         "phase": 7,
         "dataset": dataset_name(dataset),
@@ -156,6 +169,7 @@ def _dataset_provenance(
         ],
         "class_names": list(dataset.class_names),
         "split_id": identifier,
+        "split_unit": str(config["split"].get("unit", "rows")),
         "split_sizes": {
             name: int(len(getattr(split, name)))
             for name in ("train", "tune", "calibration", "test")
@@ -171,6 +185,17 @@ def _dataset_provenance(
             "frozen final models refit preprocessing on full outer train"
         ),
     }
+    groups = getattr(dataset, "groups", None)
+    if groups is not None:
+        provenance["n_groups"] = int(len(np.unique(groups)))
+        provenance["partition_groups"] = {
+            name: sorted(
+                int(value)
+                for value in np.unique(groups[getattr(split, name)])
+            )
+            for name in ("train", "tune", "calibration", "test")
+        }
+    return provenance
 
 
 def _split_distribution(dataset: Any, split: Any) -> pd.DataFrame:
@@ -271,6 +296,9 @@ def _write_protocol_record(
         ),
         "multiclass_task": len(np.unique(dataset.labels)) >= 3,
         "four_way_split_disjoint": _split_is_disjoint(split),
+        "group_disjoint_when_requested": _group_split_is_disjoint(
+            config, dataset, split
+        ),
         "every_class_present_in_every_partition": bool(
             (class_counts == len(dataset.class_names)).all()
         ),
@@ -342,6 +370,7 @@ def _write_protocol_record(
         "status": "PASS" if all(checks.values()) else "FAIL",
         "checks": checks,
         "protocol": {
+            "split_unit": str(config["split"].get("unit", "rows")),
             "preprocessing_fit_partition": (
                 "selection train during search; full outer train after freeze"
             ),
@@ -384,4 +413,23 @@ def _split_is_disjoint(split: Any) -> bool:
         np.intersect1d(left, right).size == 0
         for left_index, left in enumerate(parts)
         for right in parts[left_index + 1 :]
+    )
+
+
+def _group_split_is_disjoint(
+    config: Mapping[str, Any], dataset: Any, split: Any
+) -> bool:
+    if str(config["split"].get("unit", "rows")) != "groups":
+        return True
+    groups = getattr(dataset, "groups", None)
+    if groups is None:
+        return False
+    partition_groups = [
+        np.unique(groups[getattr(split, name)])
+        for name in ("train", "tune", "calibration", "test")
+    ]
+    return all(
+        np.intersect1d(left, right).size == 0
+        for left_index, left in enumerate(partition_groups)
+        for right in partition_groups[left_index + 1 :]
     )
