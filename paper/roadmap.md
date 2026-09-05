@@ -11,7 +11,8 @@
 - ✅ **Phase 4 - Progressive subset selection:** complete; see [`phase-4-validation.md`](phase-4-validation.md).
 - ✅ **Phase 5 - Required baselines:** complete; see [`phase-5-validation.md`](phase-5-validation.md).
 - ✅ **Phase 6 - Interaction with scaling:** complete; see [`phase-6-validation.md`](phase-6-validation.md).
-- 🚧 **Phase 7 - Real datasets:** Dry Bean and Covertype complete; Human Activity Recognition is next. See [`phase-7-validation.md`](phase-7-validation.md).
+- ✅ **Phase 7 - Real datasets:** Dry Bean, Covertype, and subject-disjoint Human Activity Recognition complete. See [`phase-7-validation.md`](phase-7-validation.md).
+- 🧊 **Phase 8 - Robustness and statistics:** protocol frozen and implemented; expensive benchmark not started. See [`phase-8-protocol.md`](phase-8-protocol.md).
 
 **Working title:** *Conformal-Harmful Features: Feature Selection for Efficient Adaptive Prediction Sets*
 
@@ -173,14 +174,17 @@ Do not rely only on tiny binary tasks; APS/RAPS efficiency is more informative w
 
 ### Phase 8 - Robustness and statistics
 
-- Start with 10 seeds; increase to 20 if variance is material.
-- Use identical splits/seeds for paired comparisons.
-- Test `alpha` at least at `0.10` and `0.05`.
-- Vary RAPS `lambda` and `k_reg`.
-- Vary the allowed accuracy loss and subset size.
-- Test at least two classifier families.
-- Report effect sizes and paired confidence intervals/tests.
-- Include rank stability across seeds.
+- [x] Freeze 10 initial seeds and a precision-based rule for increasing to 20.
+- [x] Enforce identical splits, seeds, uniforms, and ConfTS folds within pairs.
+- [x] Preserve subject-disjoint 15/5/5/5 HAR splitting.
+- [x] Freeze `alpha` at 0.10 and 0.05 for sensitivity.
+- [x] Freeze the RAPS `lambda` and `k_reg` grid.
+- [x] Freeze allowed accuracy-loss and 1--5-removal grids.
+- [x] Retain logistic regression and the small neural network.
+- [x] Implement paired effects, intervals/tests, multiplicity, and rank stability.
+- [x] Implement subject-level HAR two-way seed/subject uncertainty.
+- [x] Implement atomic, manifest-validated resume checkpoints.
+- [ ] Run the approved expensive benchmark.
 
 ## 6. Key code interfaces
 

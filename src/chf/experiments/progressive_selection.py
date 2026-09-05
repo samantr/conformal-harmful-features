@@ -30,6 +30,7 @@ from .protocol import (
     selection_data_indices,
     split_id,
 )
+from .checkpoints import CheckpointStore, experiment_config_sha256
 
 
 PIPELINE_COLUMNS = ["scaling", "score"]
@@ -61,6 +62,7 @@ class _TuningSubsetEvaluator:
         constraints: HarmConstraints,
         selection_score: str,
         selection_scaling: str,
+        checkpoint_store: CheckpointStore | None = None,
     ) -> None:
         self.features_train = features_train
         self.labels_train = labels_train
@@ -74,6 +76,7 @@ class _TuningSubsetEvaluator:
         self.constraints = constraints
         self.selection_score = selection_score
         self.selection_scaling = selection_scaling
+        self.checkpoint_store = checkpoint_store
         self.cache: dict[tuple[int, ...], _SubsetEvidence] = {}
         self.reference_resamples: pd.DataFrame | None = None
 
@@ -84,50 +87,59 @@ class _TuningSubsetEvaluator:
         if not key:
             raise ValueError("a classifier subset must contain at least one feature")
 
-        started = time.perf_counter()
-        fitted = fit_classifier(
-            self.features_train[:, key], self.labels_train, self.model_config,
-            seed=self.seed,
+        checkpoint_key = {"selected_indices": list(key)}
+        raw = (
+            None
+            if self.checkpoint_store is None
+            else self.checkpoint_store.load_frame(checkpoint_key)
         )
-        fit_seconds = time.perf_counter() - started
-        logits = fitted.logits(self.features_tune[:, key])
-        rows: list[dict[str, Any]] = []
-        for resample_index, (resample_seed, folds) in enumerate(
-            zip(self.resample_seeds, self.evidence_folds, strict=True)
-        ):
-            for fold_index, fold in enumerate(folds):
-                fold_seed = resample_seed + 100 * fold_index
-                evaluated = evaluate_logits(
-                    logits_tune=logits[fold.scale_tuning],
-                    logits_calibration=logits[fold.calibration],
-                    logits_test=logits[fold.evaluation],
-                    labels_tune=self.labels_tune[fold.scale_tuning],
-                    labels_calibration=self.labels_tune[fold.calibration],
-                    labels_test=self.labels_tune[fold.evaluation],
-                    config=self.config,
-                    calibration_uniforms=np.random.default_rng(
-                        fold_seed + 10_001
-                    ).random(len(fold.calibration)),
-                    test_uniforms=np.random.default_rng(
-                        fold_seed + 20_001
-                    ).random(len(fold.evaluation)),
-                    seed=fold_seed,
-                    included_scores=(self.selection_score,),
-                    included_scalings=(self.selection_scaling,),
-                )
-                rows.extend(
-                    {
-                        "selection_resample": resample_index,
-                        "selection_seed": resample_seed,
-                        "selection_fold": fold_index,
-                        "selected_indices": json.dumps(key),
-                        "n_features": len(key),
-                        "fit_seconds": fit_seconds,
-                        **row,
-                    }
-                    for row in evaluated
-                )
-        raw = pd.DataFrame(rows)
+        if raw is None:
+            started = time.perf_counter()
+            fitted = fit_classifier(
+                self.features_train[:, key], self.labels_train, self.model_config,
+                seed=self.seed,
+            )
+            fit_seconds = time.perf_counter() - started
+            logits = fitted.logits(self.features_tune[:, key])
+            rows: list[dict[str, Any]] = []
+            for resample_index, (resample_seed, folds) in enumerate(
+                zip(self.resample_seeds, self.evidence_folds, strict=True)
+            ):
+                for fold_index, fold in enumerate(folds):
+                    fold_seed = resample_seed + 100 * fold_index
+                    evaluated = evaluate_logits(
+                        logits_tune=logits[fold.scale_tuning],
+                        logits_calibration=logits[fold.calibration],
+                        logits_test=logits[fold.evaluation],
+                        labels_tune=self.labels_tune[fold.scale_tuning],
+                        labels_calibration=self.labels_tune[fold.calibration],
+                        labels_test=self.labels_tune[fold.evaluation],
+                        config=self.config,
+                        calibration_uniforms=np.random.default_rng(
+                            fold_seed + 10_001
+                        ).random(len(fold.calibration)),
+                        test_uniforms=np.random.default_rng(
+                            fold_seed + 20_001
+                        ).random(len(fold.evaluation)),
+                        seed=fold_seed,
+                        included_scores=(self.selection_score,),
+                        included_scalings=(self.selection_scaling,),
+                    )
+                    rows.extend(
+                        {
+                            "selection_resample": resample_index,
+                            "selection_seed": resample_seed,
+                            "selection_fold": fold_index,
+                            "selected_indices": json.dumps(key),
+                            "n_features": len(key),
+                            "fit_seconds": fit_seconds,
+                            **row,
+                        }
+                        for row in evaluated
+                    )
+            raw = pd.DataFrame(rows)
+            if self.checkpoint_store is not None:
+                self.checkpoint_store.save_frame(checkpoint_key, raw)
         resamples = (
             raw.groupby(["selection_resample", *PIPELINE_COLUMNS], sort=False)
             .agg(
@@ -262,6 +274,9 @@ def run_progressive_selection(
         len(dataset.feature_names) - 1,
     )
     require_positive = bool(selection_config.get("require_positive_incremental_gain", True))
+    continue_after_stop = bool(
+        selection_config.get("continue_path_after_stop", False)
+    )
     selection_score = str(selection_config.get("score", "aps"))
     selection_scaling = str(selection_config.get("scaling", "base"))
     all_indices = tuple(range(len(dataset.feature_names)))
@@ -271,6 +286,16 @@ def run_progressive_selection(
     evaluators: dict[str, _TuningSubsetEvaluator] = {}
 
     for model_name, model_config in config["models"].items():
+        checkpoint_store = _progressive_checkpoint_store(
+            config=config,
+            output_dir=output_dir,
+            model_name=model_name,
+            model_config=model_config,
+            seed=seed,
+            split_identifier=outer_split_id,
+            selection_identifier=selection_identifier,
+            repository_root=repository_root,
+        )
         evaluator = _TuningSubsetEvaluator(
             features_train=dataset.features[selection_train],
             labels_train=dataset.labels[selection_train],
@@ -284,6 +309,7 @@ def run_progressive_selection(
             constraints=constraints,
             selection_score=selection_score,
             selection_scaling=selection_scaling,
+            checkpoint_store=checkpoint_store,
         )
         evaluators[model_name] = evaluator
         reference = evaluator.evaluate(all_indices)
@@ -299,10 +325,12 @@ def run_progressive_selection(
             "one_shot": _run_one_shot_path(
                 evaluator, all_indices, one_shot_order, dataset.feature_names,
                 max_removals=max_removals,
+                continue_after_stop=continue_after_stop,
             ),
             "recursive": _run_recursive_path(
                 evaluator, all_indices, dataset.feature_names,
                 max_removals=max_removals, require_positive=require_positive,
+                continue_after_stop=continue_after_stop,
             ),
         }
         for method, path in paths.items():
@@ -341,12 +369,18 @@ def run_progressive_selection(
     consensus_paths = pd.DataFrame(consensus_rows)
     _mark_frontiers(paths)
     _mark_frontiers(consensus_paths)
-    final = _final_evaluation(
-        config=config, dataset=dataset, split=split, selected_rows=selected_rows,
-        model_configs=config["models"], seed=seed, split_identifier=outer_split_id,
-        version=code_version(repository_root),
-        selection_identifier=selection_identifier,
+    selection_only = bool(
+        config.get("progressive_selection", {}).get("selection_only", False)
     )
+    if selection_only:
+        final = pd.DataFrame()
+    else:
+        final = _final_evaluation(
+            config=config, dataset=dataset, split=split, selected_rows=selected_rows,
+            model_configs=config["models"], seed=seed, split_identifier=outer_split_id,
+            version=code_version(repository_root),
+            selection_identifier=selection_identifier,
+        )
     _write_outputs(
         paths, consensus_paths, final, output_dir, config, constraints,
         resample_count, crossfit_folds, max_removals,
@@ -408,7 +442,7 @@ def _run_one_shot_path(
     all_indices: tuple[int, ...],
     order: list[ProgressiveCandidate],
     feature_names: tuple[str, ...],
-    *, max_removals: int,
+    *, max_removals: int, continue_after_stop: bool = False,
 ) -> list[dict[str, Any]]:
     selected = all_indices
     path = [_path_row(step=0, selected=selected, removed_feature=None,
@@ -416,7 +450,7 @@ def _run_one_shot_path(
     for candidate in order[:max_removals]:
         proposed = tuple(i for i in selected if i != candidate.feature_index)
         evidence = evaluator.evaluate(proposed)
-        if not bool(evidence.consensus["eligible"]):
+        if not bool(evidence.consensus["eligible"]) and not continue_after_stop:
             break
         selected = proposed
         path.append(_path_row(
@@ -431,6 +465,7 @@ def _run_recursive_path(
     all_indices: tuple[int, ...],
     feature_names: tuple[str, ...],
     *, max_removals: int, require_positive: bool,
+    continue_after_stop: bool = False,
 ) -> list[dict[str, Any]]:
     selected = all_indices
     reference = evaluator.evaluate(selected)
@@ -449,13 +484,52 @@ def _run_recursive_path(
             candidates, require_positive_gain=require_positive
         )
         if chosen is None:
-            break
+            if not continue_after_stop:
+                break
+            ordered = rank_progressive_candidates(candidates)
+            if not ordered:
+                break
+            chosen = ordered[0]
         selected = tuple(i for i in selected if i != chosen.feature_index)
         path.append(_path_row(
             step=len(path), selected=selected, removed_feature=chosen.feature_name,
             evidence=evaluator.evaluate(selected),
         ))
     return path
+
+
+def _progressive_checkpoint_store(
+    *,
+    config: Mapping[str, Any],
+    output_dir: Path,
+    model_name: str,
+    model_config: Mapping[str, Any],
+    seed: int,
+    split_identifier: str,
+    selection_identifier: str,
+    repository_root: Path,
+) -> CheckpointStore | None:
+    checkpoint_config = config.get("checkpointing", {})
+    if not bool(checkpoint_config.get("enabled", False)):
+        return None
+    manifest = {
+        "schema_version": 1,
+        "stage": "progressive_selection",
+        "experiment_name": config["experiment_name"],
+        "seed": seed,
+        "model": model_name,
+        "model_config": dict(model_config),
+        "split_id": split_identifier,
+        "selection_data_id": selection_identifier,
+        "config_sha256": experiment_config_sha256(config),
+        "code_version": code_version(repository_root),
+    }
+    store = CheckpointStore(
+        output_dir / "checkpoints" / "progressive" / model_name,
+        manifest,
+    )
+    store.initialize(resume=bool(checkpoint_config.get("resume", False)))
+    return store
 
 
 def _mark_frontiers(frame: pd.DataFrame) -> None:
@@ -558,7 +632,14 @@ def _write_outputs(
         yaml.safe_dump(dict(config), sort_keys=False), encoding="utf-8"
     )
     _plot_paths(paths, output_dir / "progressive_pareto_curves.png")
-    expected_final = len(config["models"]) * 3 * len(config["conformal"]["scores"]) * 3
+    selection_only = bool(
+        config.get("progressive_selection", {}).get("selection_only", False)
+    )
+    expected_final = (
+        0
+        if selection_only
+        else len(config["models"]) * 3 * len(config["conformal"]["scores"]) * 3
+    )
     checks = {
         "both_selection_methods_present": set(consensus_paths["method"]) == {
             "one_shot", "recursive"
@@ -570,12 +651,18 @@ def _write_outputs(
             consensus_paths.loc[consensus_paths["selected_for_final"], "eligible"].all()
         ),
         "final_row_count": len(final) == expected_final,
-        "fresh_final_thresholds_are_finite": bool(np.isfinite(final["threshold"]).all()),
-        "final_values_are_finite": bool(np.isfinite(final[
-            ["accuracy", "coverage", "mean_size", "sscv", "conditional_violation"]
-        ]).all().all()),
+        "fresh_final_thresholds_are_finite": bool(
+            selection_only or np.isfinite(final["threshold"]).all()
+        ),
+        "final_values_are_finite": bool(
+            selection_only
+            or np.isfinite(final[
+                ["accuracy", "coverage", "mean_size", "sscv", "conditional_violation"]
+            ]).all().all()
+        ),
         "subset_frozen_before_final_calibration": bool(
-            final["subset_frozen_before_final_calibration"].all()
+            selection_only
+            or final["subset_frozen_before_final_calibration"].all()
         ),
     }
     record = {
@@ -589,8 +676,16 @@ def _write_outputs(
             "selection_tune_rows": selection_tune_size,
             "selection_evidence": f"{resample_count}x{crossfit_folds} cross-fitting",
             "selection_pipeline": f"{selection_scaling}+{selection_score}",
-            "final_calibration_access": "once after subset freeze",
-            "final_test_access": "once after subset freeze",
+            "final_calibration_access": (
+                "none in selection-only mode"
+                if selection_only
+                else "once after subset freeze"
+            ),
+            "final_test_access": (
+                "none in selection-only mode"
+                if selection_only
+                else "once after subset freeze"
+            ),
             "one_shot": "fixed initial constrained-efficiency order",
             "recursive": "retrain and rerank remaining features after every removal",
         },

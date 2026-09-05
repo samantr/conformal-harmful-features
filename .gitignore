@@ -3,6 +3,17 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .venv/
+venv/
+env/
+ENV/
+
+# Local IDE state
+.idea/
+*.iml
+
+# Locally packaged result bundles belong outside version control. Dataset
+# archives remain under outputs/, which is already ignored below.
+*.zip
 
 # Generated experiment artifacts
 outputs/*/

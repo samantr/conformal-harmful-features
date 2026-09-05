@@ -4,14 +4,11 @@ Research code for testing whether features with little classification value can 
 
 ## Current milestone
 
-**Phase 7 - Real datasets: IN PROGRESS.** The complete leakage-safe protocol has
-been transferred to UCI Dry Bean and Covertype, including verified source
-provenance, train-only preprocessing, both model families, matched baselines,
-and the full Base/TS/ConfTS x APS/RAPS factorial.
-
-Dry Bean and Covertype are complete at the single-seed descriptive level. Next:
-transfer the same frozen protocol to **Human Activity Recognition**; multi-seed
-inference remains Phase 8.
+**Phase 8 - Robustness and statistics: PROTOCOL FROZEN, NOT RUN.** Phase 7 is
+complete for UCI Dry Bean, Covertype, and subject-disjoint Human Activity
+Recognition. The approved ten-seed paired design, sensitivity grid, inference,
+rank-stability analysis, grouped HAR uncertainty, and safe checkpoints are
+implemented. No expensive Phase 8 benchmark has been launched.
 
 ## Stage tracker
 
@@ -24,8 +21,8 @@ inference remains Phase 8.
 | Phase 4 - Progressive subset selection | ✅ Complete |
 | Phase 5 - Required baselines | ✅ Complete |
 | Phase 6 - Interaction with scaling | ✅ Complete |
-| Phase 7 - Real datasets | 🚧 In progress - Dry Bean + Covertype complete |
-| Phase 8 - Robustness and statistics | Not started |
+| Phase 7 - Real datasets | ✅ Complete - Dry Bean + Covertype + HAR frozen |
+| Phase 8 - Robustness and statistics | 🧊 Protocol frozen; benchmark pending |
 
 ## Scientific rule
 
@@ -64,6 +61,9 @@ python experiments/06_required_baselines.py --config configs/synthetic_debug.yam
 python experiments/07_scaling_interaction.py --config configs/synthetic_debug.yaml
 python experiments/08_real_dry_bean.py --config configs/dry_bean.yaml
 python experiments/09_real_covertype.py --config configs/covertype.yaml
+python experiments/10_har_provenance.py --config configs/human_activity_recognition.yaml
+python experiments/11_real_har.py --config configs/human_activity_recognition.yaml
+python experiments/12_robustness_statistics.py --config configs/phase8_robustness.yaml --plan-only
 ```
 
 The first experiment generates the controlled 10-class/20-feature dataset, verifies its known feature roles using training data only, persists the exact four-way split, trains both model families, and writes all 12 Base/TS/ConfTS x APS/RAPS result rows to `baseline_results.csv`.
@@ -75,7 +75,8 @@ Phase 3 definitions, tuning-only cross-fitting protocol, stability results, and 
 Phase 4 one-shot/recursive paths, frozen-subset results, and untouched-test findings are recorded in [`paper/phase-4-validation.md`](paper/phase-4-validation.md).
 Phase 5 matched-size baseline protocols and results are recorded in [`paper/phase-5-validation.md`](paper/phase-5-validation.md).
 Phase 6 scaling-factorial protocol, interaction decomposition, and results are recorded in [`paper/phase-6-validation.md`](paper/phase-6-validation.md).
-Phase 7 Dry Bean and Covertype provenance, protocols, accepted results, numerical resets, and decisions are recorded in [`paper/phase-7-validation.md`](paper/phase-7-validation.md).
+Phase 7 Dry Bean, Covertype, and HAR provenance, protocols, accepted results, numerical resets, and decisions are recorded in [`paper/phase-7-validation.md`](paper/phase-7-validation.md).
+The frozen Phase 8 design, estimands, sensitivity grids, inference, resume rules, and compute budget are recorded in [`paper/phase-8-protocol.md`](paper/phase-8-protocol.md).
 
 ## Planned experiment sequence
 
@@ -88,3 +89,6 @@ Phase 7 Dry Bean and Covertype provenance, protocols, accepted results, numerica
 7. `07_scaling_interaction.py`: Base/TS/ConfTS x APS/RAPS interaction analysis.
 8. `08_real_dry_bean.py`: first real-data transfer with provenance and protocol audits.
 9. `09_real_covertype.py`: large mixed numeric/indicator real-data transfer with an audited selection compute budget.
+10. `10_har_provenance.py`: checksum, schema, and subject-disjoint HAR split audit.
+11. `11_real_har.py`: grouped-uncertainty HAR transfer and full Phase 7C factorial.
+12. `12_robustness_statistics.py`: zero-fit planning, resumable paired-seed execution, and Phase 8 inference.

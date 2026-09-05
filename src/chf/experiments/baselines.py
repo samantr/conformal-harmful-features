@@ -27,6 +27,7 @@ from .protocol import (
     selection_data_indices,
     split_id,
 )
+from .checkpoints import CheckpointStore, experiment_config_sha256
 
 
 def run_required_baselines(
@@ -64,11 +65,17 @@ def run_required_baselines(
         )
     else:
         valid_cached_selection = False
+    if bool(config.get("checkpointing", {}).get("enabled", False)):
+        # Reconstruct the path from manifest-validated candidate shards. A CSV
+        # alone does not prove that code, configuration, and split still match.
+        valid_cached_selection = False
     if not valid_cached_selection:
         _, progressive_paths, _ = run_progressive_selection(
             config, proposed_dir, repository_root
         )
-    proposed = progressive_paths.loc[progressive_paths["selected_for_final"]].copy()
+    primary_proposed = progressive_paths.loc[
+        progressive_paths["selected_for_final"]
+    ].copy()
     train_x = dataset.features[selection_train]
     train_y = dataset.labels[selection_train]
     tune_x = dataset.features[selection_tune]
@@ -82,6 +89,29 @@ def run_required_baselines(
     shap_max_evaluations = int(baseline_config.get(
         "shap_max_evaluations", 2 * train_x.shape[1] + 1
     ))
+    target_removals = tuple(
+        sorted({int(value) for value in baseline_config.get("target_removals", ())})
+    )
+    if any(value <= 0 or value >= train_x.shape[1] for value in target_removals):
+        raise ValueError(
+            "baselines.target_removals must lie between one and n_features - 1"
+        )
+    include_progressive_steps = bool(
+        baseline_config.get("include_progressive_steps", False)
+    )
+    if include_progressive_steps:
+        proposed = progressive_paths.loc[
+            progressive_paths["n_removed"].astype(int).eq(0)
+            | progressive_paths["n_removed"].astype(int).isin(target_removals)
+            | progressive_paths["selected_for_final"].astype(bool)
+        ].copy()
+    else:
+        proposed = primary_proposed.copy()
+    primary_keys = set(
+        primary_proposed[["model", "method", "selected_indices"]].itertuples(
+            index=False, name=None
+        )
+    )
 
     shared_orders = {
         "mutual_information": mutual_information_order(train_x, train_y, seed=seed),
@@ -105,10 +135,19 @@ def run_required_baselines(
             fitted_all.predict_proba, background, evaluation, seed=seed + 602,
             max_evaluations=shap_max_evaluations,
         )
-        targets = sorted(set(proposed.loc[proposed["model"] == model_name, "n_features"].astype(int)))
+        model_primary = primary_proposed.loc[
+            primary_proposed["model"] == model_name
+        ]
+        primary_targets = set(model_primary["n_features"].astype(int))
+        targets = set(
+            proposed.loc[proposed["model"] == model_name, "n_features"].astype(int)
+        )
+        targets.update(train_x.shape[1] - value for value in target_removals)
+        targets = sorted(targets)
         selection_rows.append(_selection_row(
             model_name, "all_features", None, all_indices, dataset.feature_names,
-            ranking_source="none", selection_seed=seed,
+            ranking_source="none", selection_seed=seed, primary_selected=True,
+            ranking=all_indices,
         ))
         for target_size in targets:
             for method, (order, scores) in model_orders.items():
@@ -121,8 +160,15 @@ def run_required_baselines(
                         else "selection_train+tune"
                     ),
                     selection_seed=seed, scores=scores,
+                    primary_selected=target_size in primary_targets,
+                    ranking=tuple(int(value) for value in order),
                 ))
-            for repetition in range(random_repetitions):
+            repetitions = (
+                random_repetitions
+                if not target_removals or target_size in primary_targets
+                else 0
+            )
+            for repetition in range(repetitions):
                 random_seed = seed + 10_000 + 997 * repetition + 31 * target_size
                 selected = tuple(sorted(np.random.default_rng(random_seed).choice(
                     len(all_indices), size=target_size, replace=False
@@ -130,7 +176,8 @@ def run_required_baselines(
                 selection_rows.append(_selection_row(
                     model_name, "random", target_size, selected, dataset.feature_names,
                     ranking_source="random", selection_seed=random_seed,
-                    repetition=repetition,
+                    repetition=repetition, primary_selected=True,
+                    ranking=selected,
                 ))
         for row in proposed.loc[proposed["model"] == model_name].to_dict("records"):
             selected = tuple(json.loads(row["selected_indices"]))
@@ -139,14 +186,84 @@ def run_required_baselines(
                 dataset.feature_names,
                 ranking_source="selection_train+tune_crossfit",
                 selection_seed=seed,
+                primary_selected=(
+                    model_name,
+                    str(row["method"]),
+                    row["selected_indices"],
+                ) in primary_keys,
+                metadata={
+                    "tuning_n_removed": int(row["n_removed"]),
+                    "tuning_max_accuracy_loss": float(row["max_accuracy_loss"]),
+                    "tuning_max_coverage_shortfall": float(
+                        row["max_coverage_shortfall"]
+                    ),
+                    "tuning_efficiency_gain": float(
+                        row["cumulative_efficiency_gain"]
+                    ),
+                    "tuning_conditional_violation": float(
+                        row["mean_conditional_violation"]
+                    ),
+                },
             ))
 
     selections = pd.DataFrame(selection_rows).drop_duplicates(
         ["model", "method", "target_size", "selected_indices", "repetition"]
     ).reset_index(drop=True)
     selections["selection_data_id"] = selection_identifier
+    if bool(baseline_config.get("selection_only", False)):
+        selections.to_csv(output_dir / "baseline_selections.csv", index=False)
+        (output_dir / "resolved_config.yaml").write_text(
+            yaml.safe_dump(dict(config), sort_keys=False), encoding="utf-8"
+        )
+        record = {
+            "status": "PASS",
+            "checks": {
+                "all_required_methods_present": {
+                    "all_features", "random", "mutual_information",
+                    "permutation_importance", "rfe", "shap", "crfe",
+                    "conformal_harm_one_shot",
+                    "conformal_harm_recursive",
+                }.issubset(set(selections["method"])),
+                "subsets_frozen_before_calibration": bool(
+                    selections["subset_frozen_before_final_calibration"].all()
+                ),
+                "identical_selection_data": bool(
+                    selections["selection_data_id"].eq(selection_identifier).all()
+                ),
+            },
+            "protocol": {
+                "mode": "selection_only_for_phase8",
+                "ranking_partitions": "selection train or selection train+tune",
+                "final_calibration_access": "none in this stage",
+                "final_test_access": "none in this stage",
+                "selection_data_id": selection_identifier,
+            },
+            "observed_selection_rows": len(selections),
+            "observed_final_rows": 0,
+        }
+        if not all(record["checks"].values()):
+            raise RuntimeError("Phase 8 baseline-selection validation failed")
+        (output_dir / "baseline_protocol.json").write_text(
+            json.dumps(record, indent=2, sort_keys=True), encoding="utf-8"
+        )
+        return selections, pd.DataFrame(), pd.DataFrame()
+    checkpoint_store = _baseline_checkpoint_store(
+        config=config,
+        output_dir=output_dir,
+        seed=seed,
+        split_identifier=identifier,
+        selection_identifier=selection_identifier,
+        repository_root=repository_root,
+    )
     results = _evaluate_frozen_selections(
-        selections, config, dataset, split, seed, identifier, code_version(repository_root)
+        selections,
+        config,
+        dataset,
+        split,
+        seed,
+        identifier,
+        code_version(repository_root),
+        checkpoint_store=checkpoint_store,
     )
     summary = _summarize(results)
     _write_outputs(
@@ -163,6 +280,9 @@ def _selection_row(
     model: str, method: str, target_size: int | None, selected: tuple[int, ...],
     feature_names: tuple[str, ...], *, ranking_source: str, selection_seed: int,
     scores: np.ndarray | None = None, repetition: int | None = None,
+    primary_selected: bool = False,
+    ranking: tuple[int, ...] | None = None,
+    metadata: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "model": model, "method": method,
@@ -172,18 +292,44 @@ def _selection_row(
         "ranking_source": ranking_source, "selection_seed": selection_seed,
         "repetition": -1 if repetition is None else repetition,
         "feature_scores": None if scores is None else json.dumps(np.asarray(scores).tolist()),
+        "feature_ranking": None if ranking is None else json.dumps(ranking),
         "subset_frozen_before_final_calibration": True,
+        "phase8_primary_selected": bool(primary_selected),
+        **dict(metadata or {}),
     }
 
 
 def _evaluate_frozen_selections(
     selections: pd.DataFrame, config: Mapping[str, Any], dataset: Any, split: Any,
     seed: int, identifier: str, version: str,
+    *, checkpoint_store: CheckpointStore | None = None,
 ) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     calibration_uniforms = np.random.default_rng(seed + 500_001).random(len(split.calibration))
     test_uniforms = np.random.default_rng(seed + 500_002).random(len(split.test))
     for selection in selections.to_dict("records"):
+        checkpoint_key = {
+            "model": selection["model"],
+            "method": selection["method"],
+            "target_size": int(selection["target_size"]),
+            "selected_indices": selection["selected_indices"],
+            "repetition": int(selection["repetition"]),
+        }
+        restored = (
+            None
+            if checkpoint_store is None
+            else checkpoint_store.load_frame(checkpoint_key)
+        )
+        if restored is not None:
+            if len(restored) != 1:
+                raise ValueError("a baseline checkpoint must contain exactly one row")
+            rows.append(restored.iloc[0].to_dict())
+            print(
+                f"Baseline resume: {selection['model']} | "
+                f"{selection['method']} | {selection['n_features']}",
+                flush=True,
+            )
+            continue
         selected = tuple(json.loads(selection["selected_indices"]))
         fitted = fit_classifier(
             dataset.features[split.train][:, selected], dataset.labels[split.train],
@@ -205,7 +351,12 @@ def _evaluate_frozen_selections(
             "final_calibration_used_once": True, "final_test_used_once": True,
             "code_version": version, **selection,
         }
-        rows.append({**metadata, **evaluated})
+        completed = {**metadata, **evaluated}
+        rows.append(completed)
+        if checkpoint_store is not None:
+            checkpoint_store.save_frame(
+                checkpoint_key, pd.DataFrame([completed])
+            )
         print(f"Baseline final: {selection['model']} | {selection['method']} | {len(selected)}", flush=True)
     results = pd.DataFrame(rows)
     reference = results.loc[results["method"] == "all_features", [
@@ -220,6 +371,33 @@ def _evaluate_frozen_selections(
     results["coverage_deviation"] = (results["coverage"] - (1 - results["alpha"])).abs()
     results["conditional_violation"] = results[["sscv", "class_coverage_max_deviation"]].max(axis=1)
     return results
+
+
+def _baseline_checkpoint_store(
+    *,
+    config: Mapping[str, Any],
+    output_dir: Path,
+    seed: int,
+    split_identifier: str,
+    selection_identifier: str,
+    repository_root: Path,
+) -> CheckpointStore | None:
+    checkpoint_config = config.get("checkpointing", {})
+    if not bool(checkpoint_config.get("enabled", False)):
+        return None
+    manifest = {
+        "schema_version": 1,
+        "stage": "baseline_final_evaluation",
+        "experiment_name": config["experiment_name"],
+        "seed": seed,
+        "split_id": split_identifier,
+        "selection_data_id": selection_identifier,
+        "config_sha256": experiment_config_sha256(config),
+        "code_version": code_version(repository_root),
+    }
+    store = CheckpointStore(output_dir / "checkpoints" / "baselines", manifest)
+    store.initialize(resume=bool(checkpoint_config.get("resume", False)))
+    return store
 
 
 def _summarize(results: pd.DataFrame) -> pd.DataFrame:
@@ -247,7 +425,11 @@ def _write_outputs(
     methods = {"all_features", "random", "mutual_information", "permutation_importance",
                "rfe", "shap", "crfe", "conformal_harm_one_shot", "conformal_harm_recursive"}
     expected_random = (
-        selections.loc[selections["method"] != "all_features", ["model", "target_size"]]
+        selections.loc[
+            selections["phase8_primary_selected"].astype(bool)
+            & ~selections["method"].isin({"all_features", "random"}),
+            ["model", "target_size"],
+        ]
         .drop_duplicates().shape[0] * random_repetitions
     )
     checks = {
@@ -270,7 +452,11 @@ def _write_outputs(
             "selection_data_id": selection_identifier,
             "selection_train_rows": selection_train_size,
             "selection_tune_rows": selection_tune_size,
-            "subset_sizes": "matched to Phase 4 frozen proposed sizes",
+            "subset_sizes": (
+                "Phase 8 requested removal grid plus primary proposed sizes"
+                if config.get("baselines", {}).get("target_removals")
+                else "matched to Phase 4 frozen proposed sizes"
+            ),
             "final_calibration_access": "once after every subset was frozen",
             "final_test_access": "once after every subset was frozen",
             "evaluation_pipeline": "Base APS only; scaling interaction deferred to Phase 6",

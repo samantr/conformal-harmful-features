@@ -57,3 +57,15 @@ Phase 7 real-data benchmarks additionally write:
 - `phase7_selection_indices.npz`: the exact train/tune rows available to selection under any declared compute budget.
 - `phase7_main_table.csv`: deterministic final Base/TS/ConfTS x APS/RAPS results.
 - `phase7_protocol.json`: source, split, selection-budget, leakage, coverage, and numerical-safety checks.
+
+Phase 8 robustness runs additionally write:
+
+- `phase8_run_plan.csv` and `phase8_plan_manifest.json`: the complete zero-fit 30-unit plan and frozen grid digest.
+- Per-unit `phase8_split_indices.npz`, `phase8_selection_indices.npz`, and `phase8_accuracy_loss_choices.csv`: exact paired partitions and tuning-only sensitivity choices.
+- Per-unit `checkpoints/`: atomic candidate and unique-subset shards bound to split, selection, configuration, grid, and code manifests.
+- Per-unit `phase8_results.csv` and `phase8_subject_results.csv`: final conformal-grid results and HAR held-out-subject metrics.
+- `phase8_paired_*_effects.csv` and `phase8_matched_standard_effects.csv`: paired intervals, effect sizes, tests, and Holm corrections.
+- `phase8_accuracy_loss_sensitivity_effects.csv` and `phase8_subset_size_sensitivity_effects.csv`: frozen tolerance and 1--5-removal analyses.
+- `phase8_rank_stability_*.csv`: all seed-pair rank correlations and top-k stability summaries.
+- `phase8_har_subject_effects.csv`: two-way seed/subject bootstrap intervals.
+- `phase8_precision_decision.json`: the preregistered 10-to-20-seed precision decision.
