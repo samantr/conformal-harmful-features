@@ -451,8 +451,14 @@ def _sensitivity_effects(
         & results["scaling"].eq("base")
         & results["score"].eq("aps")
     ].copy()
+    # Random baseline repeats can legitimately select the same subset within a
+    # seed.  They are unrelated to the proposed-method accuracy-loss choices,
+    # but would make the unfiltered right-hand merge keys non-unique.
+    base_for_choices = base.loc[
+        base["method"].isin(choices["method"].unique())
+    ].copy()
     chosen = choices.merge(
-        base,
+        base_for_choices,
         on=["dataset", "seed", "model", "method", "selected_indices"],
         how="left",
         validate="many_to_one",

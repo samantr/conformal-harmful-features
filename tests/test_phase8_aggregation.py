@@ -83,6 +83,29 @@ def _write_unit(root: Path, seed: int) -> dict[str, object]:
             "tuning_n_removed": None,
         }
     )
+    # Repeated random baselines may land on the same subset.  Those duplicate
+    # keys must not contaminate the proposed-method sensitivity join.
+    for _ in range(2):
+        result_rows.append(
+            {
+                "dataset": "dry_bean",
+                "model": "small_neural_network",
+                "seed": seed,
+                "method": "random",
+                "target_size": 4,
+                "selected_indices": json.dumps([0, 1, 2, 3]),
+                "phase8_primary_selected": True,
+                "alpha": 0.1,
+                "scaling": "base",
+                "score": "aps",
+                "mean_size": all_size - 0.005,
+                "accuracy": 0.895,
+                "mean_size_reduction_vs_all": 0.005,
+                "accuracy_loss_vs_all": 0.005,
+                "coverage_delta_vs_all": -0.002,
+                "tuning_n_removed": None,
+            }
+        )
     pd.DataFrame(result_rows).to_csv(unit / "phase8_results.csv", index=False)
     (unit / "phase8_unit_complete.json").write_text(
         json.dumps({"status": "PASS"}), encoding="utf-8"
