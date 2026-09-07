@@ -1,0 +1,31 @@
+name: Phase 8 CI
+
+on:
+  push:
+    branches:
+      - phase-8-robustness
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-and-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+
+      - name: Run test suite
+        run: python -m pytest -q
+
+      - name: Validate frozen Phase 8 plan
+        run: python experiments/12_robustness_statistics.py --config configs/phase8_robustness.yaml --plan-only --output-dir /tmp/phase8-plan
