@@ -6,6 +6,11 @@ on:
       - phase-8-robustness
     paths:
       - .github/workflows/phase8-precision-extension.yml
+      - experiments/18_phase8_precision_extension.py
+      - experiments/19_phase8_precision_extension_aggregate.py
+      - tests/test_phase8_precision_extension.py
+      - configs/phase8_robustness_extension_seeds.yaml
+      - PHASE8_PRECISION_EXTENSION.md
   workflow_dispatch:
 
 permissions:
@@ -57,8 +62,6 @@ jobs:
             --config control/configs/phase8_robustness_extension_seeds.yaml \
             --repository-root scientific \
             --output-dir extension_outputs \
-            --dataset dry_bean \
-            --seed 53 \
             --validate-only
 
       - name: Verify frozen scientific checkout is clean
@@ -170,7 +173,7 @@ jobs:
     name: Final Phase 8 aggregate after precision extension
     needs: extend
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - name: Check out extension control code
         uses: actions/checkout@v4
@@ -193,7 +196,8 @@ jobs:
       - name: Install frozen scientific project
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e "./scientific[dev,baselines]"
+          python -m pip install -e "./scientific[dev]"
+          rm -rf ~/.cache/pip
 
       - name: Restore all 30 initial Phase 8 units
         uses: actions/download-artifact@v4
