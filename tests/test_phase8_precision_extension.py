@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -33,6 +34,29 @@ def test_extension_spec_changes_only_the_seed_batch_and_execution_metadata():
         "human_activity_recognition",
     }
     assert spec["precision_extension"]["stopped_at_10_seeds"] == ["covertype"]
+
+
+def test_extension_installs_numerical_retention_hook_before_fresh_unit(monkeypatch):
+    runner = _load(RUNNER, "phase8_precision_extension_hook_test")
+    events: list[str] = []
+
+    v1 = SimpleNamespace()
+    v1._install_har_merge_compatibility = lambda: events.append("har_merge")
+    v1._install_recovery_validator = lambda: events.append("legacy_validator")
+
+    def install_retention(module):
+        assert module is v1
+        events.append("configure_retention")
+        module._install_recovery_validator = lambda: events.append("retention_validator")
+
+    v3 = SimpleNamespace(_install_diagnostic_retention_validator=install_retention)
+
+    def fake_load(path, name):
+        return v1 if "v1" in name else v3
+
+    monkeypatch.setattr(runner, "_load_module", fake_load)
+    runner._install_completed_run_compatibility()
+    assert events == ["har_merge", "configure_retention", "retention_validator"]
 
 
 def test_meet_in_the_middle_exact_sign_flip_matches_frozen_enumeration():
