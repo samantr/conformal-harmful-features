@@ -3,9 +3,9 @@
 This control script is executed from the current control checkout while the
 scientific package is installed from the original Phase 8 commit ``e4b3645``.
 The extension seed specification still contains exactly ten seeds, so the
-original Phase 8 scientific validator remains untouched.  The only operational
+original Phase 8 scientific validator remains untouched. The only operational
 compatibility layers installed are the already documented pandas-3 HAR merge
-normalization and the numerical-boundary retention policy from the completed
+normalization and numerical-boundary retention policy from the completed
 10-seed recovery.
 """
 
@@ -31,10 +31,7 @@ V1_PATH = HERE / "13_phase8_recover.py"
 V3_PATH = HERE / "15_phase8_recover_v3.py"
 EXPECTED_SCIENTIFIC_VERSION = "e4b3645"
 EXPECTED_EXTENSION_SEEDS = tuple(range(53, 63))
-EXPECTED_EXTENSION_DATASETS = {
-    "dry_bean",
-    "human_activity_recognition",
-}
+EXPECTED_EXTENSION_DATASETS = {"dry_bean", "human_activity_recognition"}
 
 
 def _load_module(path: Path, name: str):
@@ -61,7 +58,7 @@ def validate_extension_design(
     initial = _load_yaml(repository_root / "configs" / "phase8_robustness.yaml")
 
     # Exercise the original scientific validator: the extension is deliberately
-    # another 10-seed batch, not a mutation of the initial validator.
+    # another ten-seed batch, not a mutation of the initial validator.
     load_phase8_spec(extension_spec_path)
 
     seeds = tuple(int(value) for value in extension.get("seeds", ()))
@@ -74,6 +71,12 @@ def validate_extension_design(
         raise ValueError("precision extension must run Dry Bean and HAR only")
     if list(meta.get("stopped_at_10_seeds", ())) != ["covertype"]:
         raise ValueError("Covertype must remain stopped at ten seeds")
+    if tuple(int(value) for value in meta.get("initial_seeds", ())) != tuple(
+        range(43, 53)
+    ):
+        raise ValueError("extension must be anchored to initial seeds 43-52")
+    if tuple(int(value) for value in meta.get("extension_seeds", ())) != seeds:
+        raise ValueError("precision_extension.extension_seeds must match top-level seeds")
 
     frozen_equal_keys = (
         "phase",
@@ -97,11 +100,15 @@ def validate_extension_design(
 
 
 def _install_completed_run_compatibility() -> None:
-    """Install only compatibility layers already documented after the 10-seed run."""
+    """Install only compatibility layers already documented after the ten-seed run."""
     v1 = _load_module(V1_PATH, "phase8_extension_v1_compat")
     v3 = _load_module(V3_PATH, "phase8_extension_v3_compat")
     v1._install_har_merge_compatibility()
     v3._install_diagnostic_retention_validator(v1)
+    # v3 replaces this v1 hook with a setter for the retention validator. It
+    # must be invoked explicitly because fresh extension units call the frozen
+    # run_phase8_unit directly rather than v1.recover_unit.
+    v1._install_recovery_validator()
 
 
 def run_extension_unit(
@@ -184,6 +191,9 @@ def run_extension_unit(
             "numerical_failure_handling": "retained_and_flagged_not_repaired",
             "post_run_amendment": "PHASE8_POSTRUN_AMENDMENT.md",
             "precision_extension_protocol": "PHASE8_PRECISION_EXTENSION.md",
+            "scientific_grid_changed": False,
+            "final_data_reused_for_selection": False,
+            "resume_enabled": True,
         },
     )
 
@@ -193,8 +203,8 @@ def main() -> None:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--dataset", required=True)
-    parser.add_argument("--seed", type=int, required=True)
+    parser.add_argument("--dataset")
+    parser.add_argument("--seed", type=int)
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
 
@@ -209,6 +219,8 @@ def main() -> None:
         )
         return
 
+    if args.dataset is None or args.seed is None:
+        parser.error("--dataset and --seed are required unless --validate-only is used")
     run_extension_unit(
         extension_spec_path=args.config.resolve(),
         repository_root=args.repository_root.resolve(),
