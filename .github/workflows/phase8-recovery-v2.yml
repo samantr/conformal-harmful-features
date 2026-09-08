@@ -6,6 +6,14 @@ on:
       - phase-8-robustness
     paths:
       - .github/workflows/phase8-recovery-v2.yml
+      - experiments/13_phase8_recover.py
+      - experiments/15_phase8_recover_v3.py
+      - experiments/16_phase8_audit_aggregate.py
+      - experiments/17_phase8_finalize_numerical_diagnostics.py
+      - tests/test_phase8_recovery.py
+      - tests/test_phase8_recovery_v2.py
+      - tests/test_phase8_recovery_v3.py
+      - PHASE8_POSTRUN_AMENDMENT.md
   workflow_dispatch:
     inputs:
       source_run_id:
