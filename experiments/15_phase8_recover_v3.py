@@ -168,10 +168,18 @@ def _install_diagnostic_retention_validator(v1) -> None:
         )
         atomic_write_json(protocol_path, record)
 
-    # v1.recover_unit calls this hook immediately before run_phase8_grid.
-    v1._install_recovery_validator = lambda: setattr(
-        robustness, "_validate_and_write_grid", validate_retaining_numerical_events
-    )
+    def install() -> None:
+        setattr(
+            robustness,
+            "_validate_and_write_grid",
+            validate_retaining_numerical_events,
+        )
+
+    # Install immediately so the helper is testable in isolation, and also
+    # replace the v1 hook because v1.recover_unit calls it immediately before
+    # run_phase8_grid. Reinstalling the same wrapper there is intentional.
+    install()
+    v1._install_recovery_validator = install
 
 
 def main() -> None:
