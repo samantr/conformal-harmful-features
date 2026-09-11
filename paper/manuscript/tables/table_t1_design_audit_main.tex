@@ -1,0 +1,15 @@
+\begin{table}[t]
+\centering
+\caption{Audit and evaluation population. Aggregate rows are frozen Phase 8 experiment-result rows under scientific code \texttt{e4b3645}; HAR subject rows are subject-condition records used for clustered subject analysis, not independent subjects. ``Precision met'' denotes satisfaction of the frozen precision stopping rule only and does not establish efficacy, statistical significance, numerical safety, or nominal conformal coverage. HAR splitting is subject-disjoint.}
+\label{tab:t1-design-audit}
+\small
+\begin{tabular}{lrrrrlll}
+\hline
+Dataset & Seeds & Units & Aggregate rows & Subject rows & Split & Precision & Code \\
+\hline
+Dry Bean & 20 & 20 & 31,100 & 0 & Stratified & Met & e4b3645 \\
+Covertype & 10 & 10 & 15,400 & 0 & Stratified & Met & e4b3645 \\
+HAR & 20 & 20 & 29,300 & 146,500 & Subject-disjoint & Met & e4b3645 \\
+\hline
+\end{tabular}
+\end{table}

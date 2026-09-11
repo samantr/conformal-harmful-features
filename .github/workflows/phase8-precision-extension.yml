@@ -1,0 +1,276 @@
+name: Phase 8 Precision Extension
+
+on:
+  push:
+    branches:
+      - phase-8-robustness
+    paths:
+      - .github/workflows/phase8-precision-extension.yml
+      - experiments/18_phase8_precision_extension.py
+      - experiments/19_phase8_precision_extension_aggregate.py
+      - tests/test_phase8_precision_extension.py
+      - configs/phase8_robustness_extension_seeds.yaml
+      - PHASE8_PRECISION_EXTENSION.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  SCIENTIFIC_COMMIT: e4b36459f5030eb49326d129c9cf8b0c761e8d77
+  PHASE8_SCIENTIFIC_COMMIT_SHORT: e4b3645
+  SOURCE_RUN_ID: "34101494390"
+  RECOVERY_V2_RUN_ID: "34239393188"
+
+jobs:
+  preflight:
+    name: Validate precision extension before fitting
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out extension control code
+        uses: actions/checkout@v4
+        with:
+          path: control
+
+      - name: Check out frozen scientific commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SCIENTIFIC_COMMIT }}
+          path: scientific
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scientific/pyproject.toml
+
+      - name: Install frozen scientific project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "./scientific[dev,baselines]"
+
+      - name: Test extension controls and exact sign-flip implementation
+        run: |
+          python -m pytest control/tests/test_phase8_precision_extension.py -q
+
+      - name: Validate frozen extension design
+        run: |
+          python control/experiments/18_phase8_precision_extension.py \
+            --config control/configs/phase8_robustness_extension_seeds.yaml \
+            --repository-root scientific \
+            --output-dir extension_outputs \
+            --validate-only
+
+      - name: Verify frozen scientific checkout is clean
+        run: |
+          test "$(git -C scientific rev-parse --short HEAD)" = "${PHASE8_SCIENTIFIC_COMMIT_SHORT}"
+          test -z "$(git -C scientific status --porcelain)"
+
+  extend:
+    name: extend ${{ matrix.dataset }} / seed ${{ matrix.seed }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 600
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - {dataset: dry_bean, seed: 53}
+          - {dataset: dry_bean, seed: 54}
+          - {dataset: dry_bean, seed: 55}
+          - {dataset: dry_bean, seed: 56}
+          - {dataset: dry_bean, seed: 57}
+          - {dataset: dry_bean, seed: 58}
+          - {dataset: dry_bean, seed: 59}
+          - {dataset: dry_bean, seed: 60}
+          - {dataset: dry_bean, seed: 61}
+          - {dataset: dry_bean, seed: 62}
+          - {dataset: human_activity_recognition, seed: 53}
+          - {dataset: human_activity_recognition, seed: 54}
+          - {dataset: human_activity_recognition, seed: 55}
+          - {dataset: human_activity_recognition, seed: 56}
+          - {dataset: human_activity_recognition, seed: 57}
+          - {dataset: human_activity_recognition, seed: 58}
+          - {dataset: human_activity_recognition, seed: 59}
+          - {dataset: human_activity_recognition, seed: 60}
+          - {dataset: human_activity_recognition, seed: 61}
+          - {dataset: human_activity_recognition, seed: 62}
+
+    steps:
+      - name: Check out extension control code
+        uses: actions/checkout@v4
+        with:
+          path: control
+
+      - name: Check out frozen scientific commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SCIENTIFIC_COMMIT }}
+          path: scientific
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scientific/pyproject.toml
+
+      - name: Install frozen scientific project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "./scientific[dev,baselines]"
+
+      - name: Cache frozen dataset archive
+        uses: actions/cache@v4
+        with:
+          path: scientific/outputs/_datasets
+          key: phase8-dataset-${{ matrix.dataset }}-v1
+
+      - name: Try same-run checkpoint artifact on a rerun
+        id: prior
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: phase8-extension-${{ matrix.dataset }}-${{ matrix.seed }}
+          path: prior
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+
+      - name: Restore prior extension checkpoints when available
+        if: steps.prior.outcome == 'success'
+        run: |
+          mkdir -p extension_outputs
+          rsync -a prior/ extension_outputs/
+          echo "Restored same-run extension artifact for safe resume."
+
+      - name: Run preregistered extension unit
+        env:
+          PHASE8_EXTENSION_CONTROL_SHA: ${{ github.sha }}
+        run: |
+          python control/experiments/18_phase8_precision_extension.py \
+            --config control/configs/phase8_robustness_extension_seeds.yaml \
+            --repository-root scientific \
+            --output-dir extension_outputs \
+            --dataset "${{ matrix.dataset }}" \
+            --seed "${{ matrix.seed }}"
+
+      - name: Upload extension unit and checkpoints
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8-extension-${{ matrix.dataset }}-${{ matrix.seed }}
+          path: extension_outputs
+          if-no-files-found: warn
+          retention-days: 30
+          overwrite: true
+
+  aggregate:
+    name: Final Phase 8 aggregate after precision extension
+    needs: extend
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Check out extension control code
+        uses: actions/checkout@v4
+        with:
+          path: control
+
+      - name: Check out frozen scientific commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SCIENTIFIC_COMMIT }}
+          path: scientific
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scientific/pyproject.toml
+
+      - name: Install frozen scientific project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "./scientific[dev]"
+          rm -rf ~/.cache/pip
+
+      - name: Restore all 30 initial Phase 8 units
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phase8-unit-*
+          path: final_outputs
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Overlay the 12 validated recovery-v2 units
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phase8-recovered-v2-*
+          path: final_outputs
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.RECOVERY_V2_RUN_ID }}
+
+      - name: Overlay all 20 extension units
+        uses: actions/download-artifact@v4
+        with:
+          pattern: phase8-extension-*
+          path: final_outputs
+          merge-multiple: true
+
+      - name: Download initial precision decision
+        uses: actions/download-artifact@v4
+        with:
+          name: phase8-aggregate-recovered-v2
+          path: initial_aggregate
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.RECOVERY_V2_RUN_ID }}
+
+      - name: Recompute final paired inference at 20/10/20 seeds
+        env:
+          PHASE8_EXTENSION_CONTROL_SHA: ${{ github.sha }}
+        run: |
+          python control/experiments/19_phase8_precision_extension_aggregate.py \
+            --initial-config scientific/configs/phase8_robustness.yaml \
+            --extension-config control/configs/phase8_robustness_extension_seeds.yaml \
+            --initial-precision-json initial_aggregate/phase8_precision_decision.json \
+            --repository-root scientific \
+            --output-dir final_outputs
+
+      - name: Normalize final numerical diagnostics
+        run: |
+          python control/experiments/17_phase8_finalize_numerical_diagnostics.py \
+            --output-dir final_outputs
+
+      - name: Upload final Phase 8 precision-extension aggregate
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8-final-precision-extension
+          path: |
+            final_outputs/phase8_all_results.csv
+            final_outputs/phase8_all_subject_results.csv
+            final_outputs/phase8_paired_size_effects.csv
+            final_outputs/phase8_paired_accuracy_effects.csv
+            final_outputs/phase8_matched_standard_effects.csv
+            final_outputs/phase8_accuracy_loss_sensitivity_effects.csv
+            final_outputs/phase8_subset_size_sensitivity_effects.csv
+            final_outputs/phase8_rank_stability_pairs.csv
+            final_outputs/phase8_rank_stability_summary.csv
+            final_outputs/phase8_har_subject_effects.csv
+            final_outputs/phase8_precision_decision_initial10.json
+            final_outputs/phase8_precision_decision.json
+            final_outputs/phase8_protocol.json
+            final_outputs/phase8_numerical_diagnostics.csv
+            final_outputs/phase8_numerical_diagnostics.json
+            final_outputs/phase8_precision_extension_aggregate.json
+          if-no-files-found: error
+          retention-days: 30

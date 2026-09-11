@@ -1,0 +1,4 @@
+dataset,paired_seeds,seed_range,dataset_seed_units,aggregate_rows,subject_rows,split_regime,final_precision,scientific_code
+Dry Bean,20,43–62,20,31100,0,Stratified,Met,e4b3645
+Covertype,10,43–52,10,15400,0,Stratified,Met,e4b3645
+HAR,20,43–62,20,29300,146500,Subject-disjoint,Met,e4b3645

@@ -1,0 +1,168 @@
+name: Phase 8 Result Report
+
+on:
+  push:
+    branches:
+      - phase-8-robustness
+    paths:
+      - .github/workflows/phase8-report.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install analysis dependencies
+        run: python -m pip install pandas numpy
+
+      - name: Download completed Phase 8 aggregate
+        uses: actions/download-artifact@v4
+        with:
+          name: phase8-aggregate-recovered-v2
+          path: phase8
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: "34239393188"
+
+      - name: Build concise scientific report
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import numpy as np
+          import pandas as pd
+
+          root = Path("phase8")
+          out = []
+          def add(title, text=""):
+              out.append(f"## {title}\n\n{text}\n")
+          def table(df, cols=None, n=None):
+              x = df.copy()
+              if cols is not None:
+                  cols = [c for c in cols if c in x.columns]
+                  x = x[cols]
+              if n is not None:
+                  x = x.head(n)
+              return x.to_string(index=False)
+          def load_json(name):
+              return json.loads((root / name).read_text(encoding="utf-8"))
+
+          precision = load_json("phase8_precision_decision.json")
+          protocol = load_json("phase8_protocol.json")
+          recovery = load_json("phase8_recovery_aggregate.json")
+          numerical = load_json("phase8_numerical_diagnostics.json")
+
+          add("Execution and provenance", json.dumps({
+              "protocol": protocol,
+              "recovery": recovery,
+          }, indent=2, sort_keys=True))
+          add("Pre-registered 10→20 seed precision decision", json.dumps(precision, indent=2, sort_keys=True))
+          add("Numerical diagnostics", json.dumps(numerical, indent=2, sort_keys=True))
+
+          size = pd.read_csv(root / "phase8_paired_size_effects.csv")
+          acc = pd.read_csv(root / "phase8_paired_accuracy_effects.csv")
+          effect_cols = [
+              "dataset", "model", "method", "reference_method", "metric",
+              "n_pairs", "mean_difference", "ci_lower", "ci_upper",
+              "cohens_dz", "rank_biserial", "positive_fraction",
+              "sign_flip_pvalue", "holm_sign_flip_pvalue",
+              "wilcoxon_pvalue", "holm_wilcoxon_pvalue",
+          ]
+          add("Primary paired set-size effects (positive = proposed smaller)", table(size, effect_cols))
+          add("Primary paired accuracy effects (positive = proposed higher)", table(acc, effect_cols))
+
+          std = pd.read_csv(root / "phase8_matched_standard_effects.csv")
+          std_cols = [
+              "dataset", "model", "method", "reference_method", "metric",
+              "target_size_min", "target_size_max", "n_pairs", "mean_difference",
+              "ci_lower", "ci_upper", "cohens_dz", "rank_biserial",
+              "positive_fraction", "holm_sign_flip_pvalue", "holm_wilcoxon_pvalue",
+          ]
+          add("Matched deterministic-standard comparisons", table(std, std_cols))
+
+          loss = pd.read_csv(root / "phase8_accuracy_loss_sensitivity_effects.csv")
+          subset = pd.read_csv(root / "phase8_subset_size_sensitivity_effects.csv")
+          add("Accuracy-loss sensitivity", table(loss))
+          add("Subset-size sensitivity", table(subset))
+
+          ranks = pd.read_csv(root / "phase8_rank_stability_summary.csv")
+          rank_cols = [
+              "dataset", "model", "method", "stability_type", "top_k", "seed_pairs",
+              "spearman_mean", "spearman_min", "jaccard_mean", "jaccard_min",
+              "kuncheva_mean", "kuncheva_min",
+          ]
+          add("Rank stability summary", table(ranks, rank_cols))
+
+          har_path = root / "phase8_har_subject_effects.csv"
+          if har_path.exists():
+              har = pd.read_csv(har_path)
+              add("HAR subject-level two-way bootstrap", table(har))
+
+          results = pd.read_csv(root / "phase8_all_results.csv", low_memory=False)
+          primary = results[
+              results["method"].isin(["all_features", "conformal_harm_one_shot", "conformal_harm_recursive"])
+              & (results["method"].eq("all_features") | results["phase8_primary_selected"].astype(bool))
+              & results["alpha"].eq(0.10)
+              & results["scaling"].eq("base")
+              & results["score"].eq("aps")
+          ].copy()
+          metrics = [c for c in [
+              "accuracy", "coverage", "mean_size", "median_size", "size_p90",
+              "sscv", "class_coverage_max_deviation", "empty_set_rate", "full_set_rate"
+          ] if c in primary.columns]
+          agg = primary.groupby(["dataset", "model", "method"], dropna=False)[metrics].agg(["mean", "std", "min", "max"])
+          agg.columns = [f"{a}_{b}" for a,b in agg.columns]
+          agg = agg.reset_index()
+          add("Primary Base APS α=0.10 descriptive metrics across 10 seeds", table(agg))
+
+          if "numerical_boundary_flag" in results.columns:
+              flags = results.groupby(["dataset", "model", "scaling"], dropna=False).agg(
+                  rows=("scaling", "size"),
+                  raw_flagged_rows=("numerical_boundary_flag", lambda s: int(pd.Series(s).fillna(False).astype(bool).sum())),
+                  scaling_induced_flagged_rows=("scaling_induced_boundary_flag", lambda s: int(pd.Series(s).fillna(False).astype(bool).sum())),
+                  raw_boundary_events=("numerical_boundary_count", "sum"),
+                  scaling_induced_boundary_events=("scaling_induced_boundary_count", "sum"),
+              ).reset_index()
+              add("Numerical flags by dataset/model/scaling", table(flags))
+
+          # Compact decision-oriented counts for matched standards.
+          sigcol = "holm_sign_flip_pvalue" if "holm_sign_flip_pvalue" in std.columns else "sign_flip_pvalue"
+          summary = std.groupby(["dataset", "model", "method", "metric"], dropna=False).agg(
+              comparisons=("reference_method", "nunique"),
+              favorable_mean_count=("mean_difference", lambda s: int((s > 0).sum())),
+              unfavorable_mean_count=("mean_difference", lambda s: int((s < 0).sum())),
+              significant_favorable_count=("mean_difference", lambda s: 0),
+          ).reset_index()
+          # Fill significance count with aligned group calculation.
+          rows = []
+          for keys, g in std.groupby(["dataset", "model", "method", "metric"], dropna=False):
+              rows.append({
+                  "dataset": keys[0], "model": keys[1], "method": keys[2], "metric": keys[3],
+                  "comparisons": int(g["reference_method"].nunique()),
+                  "favorable_mean_count": int((g["mean_difference"] > 0).sum()),
+                  "unfavorable_mean_count": int((g["mean_difference"] < 0).sum()),
+                  "holm_significant_favorable_count": int(((g["mean_difference"] > 0) & (g[sigcol] < 0.05)).sum()),
+              })
+          add("Decision summary versus deterministic standards", table(pd.DataFrame(rows)))
+
+          report = "# Phase 8 Completed Aggregate — Scientific Report\n\n" + "\n".join(out)
+          Path("phase8_report.md").write_text(report, encoding="utf-8")
+          print(report)
+          PY
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8-scientific-report
+          path: phase8_report.md
+          retention-days: 30

@@ -1,13 +1,13 @@
 # Phase 7 Validation Record
 
-**Status:** In progress - Dry Bean and Covertype milestones complete
+**Status:** Complete - Dry Bean, Covertype, and Human Activity Recognition frozen
 
-**Completed:** 2026-09-03
+**Completed:** 2026-09-05
 
 **Scope:** Transfer the complete leakage-safe selection, baseline, and scaling
-protocol to the preregistered real datasets. UCI Dry Bean and Covertype are
-complete. Human Activity Recognition and a carefully framed medical dataset
-remain before Phase 7 as a whole is complete.
+protocol to the preregistered real datasets. UCI Dry Bean, Covertype, and Human
+Activity Recognition are complete. The optional medical transfer is deferred;
+it is not required for the Phase 8 robustness gate.
 
 ## Dataset and protocol
 
@@ -237,5 +237,79 @@ feature differs from every ordinary selector. H2 receives modest support: the
 neural result improves the all-feature accuracy/efficiency frontier and beats
 matched CRFE and mean random performance, but MI/RFE nearly match its
 efficiency with better accuracy. H3 receives no support and H4 is negative.
-These remain single-seed descriptive findings. Phase 7 should continue with
-Human Activity Recognition before Phase 8 performs paired multi-seed inference.
+These remain single-seed descriptive findings. The subject-disjoint Human
+Activity Recognition transfer follows before Phase 8 paired inference.
+
+## Phase 7C - Human Activity Recognition
+
+### Subject-disjoint protocol
+
+The official UCI HAR archive is pinned by SHA-256 digest
+`c00b803081a5c797cd5e4b83700a9810b38d53d9d84e01917e090e1fdbc81031`.
+The loader verifies 10,299 windows, 561 finite measured features, six activity
+classes, and 30 subjects. The seed-45 split is group-disjoint:
+
+| Partition | Subjects | Windows |
+|---|---|---:|
+| Training | 1, 2, 3, 8, 10, 11, 16, 17, 18, 19, 20, 22, 24, 26, 30 | 5,170 |
+| Tuning | 12, 14, 15, 25, 28 | 1,762 |
+| Calibration | 4, 5, 6, 7, 21 | 1,660 |
+| Test | 9, 13, 23, 27, 29 | 1,707 |
+
+The split identifier is `4b6c2b777e813b84` and the selection-data identifier
+is `2f8b707b2b778966`. No subject crosses partitions. Selection uses five
+repetitions of four-fold cross-fitting inside outer tune, and frozen final
+models are refit on outer train. The grouped coverage estimand is the
+unweighted mean of held-out-subject window coverage with a two-sided 95%
+Student-t interval across the five test subjects.
+
+### Frozen proposed subsets and final Base APS results
+
+Logistic one-shot and recursive selection both remove
+`137:tBodyGyro-energy()-X`. Neural one-shot removes
+`014:tBodyAcc-min()-Y`; neural recursive selection removes that feature and
+then `360:fBodyAccJerk-sma()`.
+
+| Model | Method | Features | Accuracy | Coverage | Mean size | Group coverage (95% CI) |
+|---|---|---:|---:|---:|---:|---:|
+| Logistic regression | All features | 561 | 0.9649 | 0.9385 | 1.0047 | 0.9370 [0.9042, 0.9699] |
+| Logistic regression | Proposed, both paths | 560 | 0.9684 | 0.9391 | 1.0047 | 0.9376 [0.9045, 0.9707] |
+| Small neural network | All features | 561 | 0.9619 | 0.9297 | 1.0293 | 0.9292 [0.9080, 0.9504] |
+| Small neural network | Proposed one-shot | 560 | 0.9572 | 0.9279 | 1.0018 | 0.9261 [0.8877, 0.9645] |
+| Small neural network | Proposed recursive | 559 | 0.9514 | 0.9291 | 0.9994 | 0.9268 [0.8782, 0.9754] |
+
+The logistic removal improves accuracy by 0.0035 but yields no mean-size gain.
+The neural one-shot and recursive subsets reduce mean size by 0.0275 and
+0.0299, respectively, while losing 0.0047 and 0.0105 test accuracy. The
+recursive accuracy loss is just beyond the nominal 0.01 final descriptive
+boundary; subset selection itself used tuning evidence only. Neural maximum
+class-coverage deviation worsens from 0.0647 to 0.0686 and 0.0810, so Phase 7C
+does not support H4.
+
+All 126 deterministic scaling/score rows pass grouped undercoverage safety: 63
+intervals contain the 0.90 target and 63 are overconservative; none has an
+upper confidence limit below target. All 19 Phase 7C executable checks pass.
+The grouped audit contains 630 subject-level coverage rows.
+
+### Scaling interaction and Phase 7 decision
+
+Ordinary TS selects temperatures 2.0 for the logistic proposed subsets and for
+both neural proposed subsets, versus 2.0 and 1.4 for the corresponding
+all-feature models. ConfTS selects 1.0 for logistic proposed subsets and 0.8 or
+0.9 for neural proposed subsets, versus 0.9 and 0.7 for all features. Under APS,
+TS preserves a useful neural feature-removal size gain, while ConfTS partly
+absorbs it; the interaction therefore changes sign by scaling method. This is
+descriptive single-seed evidence, not support for H3 without Phase 8 pairing.
+
+**HAR decision:** H2 receives qualified single-seed neural support and a
+negative logistic result. H3 is mixed and descriptive, and H4 is negative.
+Subject-level intervals expose material uncertainty that window-only intervals
+would conceal. Phase 7 is frozen here. Phase 8 must determine whether these
+effects, feature choices, and scaling interactions are stable across paired
+seeds and changing subject assignments.
+
+The archived Phase 7C rows record code version `b6afb43-dirty`. Numerical
+cross-audit confirms that the grouped correction left all 57 original aggregate
+numeric columns unchanged, and the results remain frozen. Phase 8 treats them
+as regression anchors only and requires clean, manifest-bound provenance for
+new observations.

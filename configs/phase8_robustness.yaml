@@ -1,0 +1,64 @@
+experiment_name: phase8_robustness
+phase: 8
+protocol_version: 1
+frozen_parent_commit: b6afb43f23e075f2380a9c81d910d09732425a8c
+seeds: [43, 44, 45, 46, 47, 48, 49, 50, 51, 52]
+
+datasets:
+  dry_bean:
+    config: configs/dry_bean.yaml
+    phase7_anchor_seed: 43
+  covertype:
+    config: configs/covertype.yaml
+    phase7_anchor_seed: 44
+  human_activity_recognition:
+    config: configs/human_activity_recognition.yaml
+    phase7_anchor_seed: 45
+    split_requirement: subject_disjoint
+
+selection:
+  primary_alpha: 0.10
+  primary_accuracy_loss: 0.01
+  accuracy_loss: [0.0, 0.005, 0.01, 0.02]
+  removed_features: [1, 2, 3, 4, 5]
+
+conformal_grid:
+  alphas: [0.10, 0.05]
+  scalings: [base, ts, confts]
+  scores: [aps, raps]
+  raps_lambda: [0.001, 0.01, 0.1]
+  raps_k_reg: [1, 3, 5]
+
+statistics:
+  confidence_level: 0.95
+  paired_test: exact_sign_flip
+  sensitivity_test: wilcoxon_signed_rank
+  standardized_effect: cohens_dz
+  rank_effect: matched_rank_biserial
+  multiplicity: holm_within_dataset_model_metric_family
+  subject_bootstrap: two_way_seed_subject
+  subject_bootstrap_repetitions: 10000
+  bootstrap_seed: 810001
+  precision_escalation:
+    maximum_seeds: 20
+    minimum_material_contrasts: 2
+    half_width_threshold: max_0.01_or_1pct_all_feature_mean_size
+
+compute_budget:
+  planned_dataset_seed_units: 30
+  full_grid_cells_per_primary_subset: 60
+  estimated_classifier_fits: 65560
+  estimated_rfe_crfe_selector_iterations_additional: 12600
+  estimated_serial_cpu_hours: [45, 60]
+  estimated_wall_hours_with_four_cpu_workers: [12, 20]
+  accelerator_required: false
+
+frozen_artifact_policy:
+  phase7_results_are_immutable: true
+  reuse_allowed_for:
+    - source_archives_with_matching_sha256
+    - frozen_phase7_regression_anchors
+    - manifest_matching_phase8_checkpoints
+  reuse_forbidden_for:
+    - phase7_single_seed_rows_as_phase8_replicates
+    - checkpoints_with_config_split_selection_or_code_drift

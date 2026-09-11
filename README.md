@@ -1,17 +1,12 @@
 # Conformal Harmful Feature Detection
 
-Research code for testing whether features with little classification value can disproportionately harm the efficiency or conditional reliability of APS/RAPS prediction sets.
+Research code and manuscript evidence for testing whether features with little classification value can disproportionately harm the efficiency or conditional reliability of APS/RAPS prediction sets.
 
-## Current milestone
+## Project status
 
-**Phase 7 - Real datasets: IN PROGRESS.** The complete leakage-safe protocol has
-been transferred to UCI Dry Bean and Covertype, including verified source
-provenance, train-only preprocessing, both model families, matched baselines,
-and the full Base/TS/ConfTS x APS/RAPS factorial.
+Phases 0–8 are complete and scientifically frozen. Phase 9 verified the final result archives, generated the paper tables/figures, drafted the general manuscript, and incorporated the first instructor-review presentation edits. Phase 10 is repository cleanup, final audit, and merge preparation; it must not change the frozen scientific results.
 
-Dry Bean and Covertype are complete at the single-seed descriptive level. Next:
-transfer the same frozen protocol to **Human Activity Recognition**; multi-seed
-inference remains Phase 8.
+The frozen scientific core is commit `e4b36459f5030eb49326d129c9cf8b0c761e8d77`. Final evidence comprises 50 dataset/seed units, 75,800 aggregate result rows, and 146,500 HAR subject-level rows. See [`paper/phase-9-verification.md`](paper/phase-9-verification.md) for the verification boundaries and qualified findings.
 
 ## Stage tracker
 
@@ -24,37 +19,50 @@ inference remains Phase 8.
 | Phase 4 - Progressive subset selection | ✅ Complete |
 | Phase 5 - Required baselines | ✅ Complete |
 | Phase 6 - Interaction with scaling | ✅ Complete |
-| Phase 7 - Real datasets | 🚧 In progress - Dry Bean + Covertype complete |
-| Phase 8 - Robustness and statistics | Not started |
+| Phase 7 - Real datasets | ✅ Complete - Dry Bean + Covertype + subject-disjoint HAR |
+| Phase 8 - Robustness and statistics | ✅ Complete - final precision extension verified |
+| Phase 9 - Paper preparation and evidence verification | ✅ Complete for general instructor-review manuscript |
+| Phase 10 - Repository cleanup/final audit | 🔎 In progress on `phase-10-final-audit` |
+
+A target-journal-specific submission package is intentionally deferred until a journal is selected.
 
 ## Scientific rule
 
 The four partitions have distinct roles:
 
-- `train`: fit model and preprocessing
-- `tune`: feature ranking, subset size, TS/ConfTS and hyperparameters
-- `calibration`: compute a fresh final conformal threshold after all choices are frozen
-- `test`: final evaluation only
+- `train`: fit model and preprocessing;
+- `tune`: feature ranking, subset size, TS/ConfTS and hyperparameters;
+- `calibration`: compute a fresh final conformal threshold after all choices are frozen;
+- `test`: final evaluation only.
 
 No feature decision may use calibration or test results.
 
-## Layout
+## Repository layout
 
 ```text
-paper/          source paper, roadmap, related-work notes
+paper/          roadmap, validation records, verified evidence, manuscript and figures
 reproduction/   frozen scripts from the completed base-paper reproduction
 configs/        experiment settings
-src/chf/        reusable research package
-experiments/    numbered executable studies
+src/chf/        reusable scientific package
+experiments/    numbered executable studies and frozen recovery/aggregation utilities
 tests/          mathematical, split-integrity and regression tests
-outputs/        generated tables, figures and logs (not source data)
+outputs/        generated local experiment artifacts (ignored except documentation)
 ```
 
-## Start
+The committed `paper/phase9_outputs/` package is intentional manuscript evidence and is separate from the ignored runtime `outputs/` tree.
+
+## Installation and tests
 
 ```bash
 python -m pip install -e ".[dev,baselines]"
 pytest
+```
+
+The project requires Python 3.10 or newer. The GitHub CI job also validates the frozen Phase 8 plan without launching model fitting.
+
+## Main experiment entry points
+
+```bash
 python experiments/01_synthetic_baseline.py --config configs/synthetic_debug.yaml
 python experiments/02_single_feature_ablation.py --config configs/synthetic_debug.yaml
 python experiments/03_masking_sensitivity.py --config configs/synthetic_debug.yaml
@@ -64,27 +72,22 @@ python experiments/06_required_baselines.py --config configs/synthetic_debug.yam
 python experiments/07_scaling_interaction.py --config configs/synthetic_debug.yaml
 python experiments/08_real_dry_bean.py --config configs/dry_bean.yaml
 python experiments/09_real_covertype.py --config configs/covertype.yaml
+python experiments/10_har_provenance.py --config configs/human_activity_recognition.yaml
+python experiments/11_real_har.py --config configs/human_activity_recognition.yaml
+python experiments/12_robustness_statistics.py --config configs/phase8_robustness.yaml --plan-only
 ```
 
-The first experiment generates the controlled 10-class/20-feature dataset, verifies its known feature roles using training data only, persists the exact four-way split, trains both model families, and writes all 12 Base/TS/ConfTS x APS/RAPS result rows to `baseline_results.csv`.
+The later `13`–`19` scripts document frozen Phase 8 recovery, audit, numerical-diagnostic and precision-extension work; they are retained for provenance rather than presented as new experimental phases.
 
-Phase 0 validation details and tolerances are recorded in [`paper/phase-0-validation.md`](paper/phase-0-validation.md).
-Phase 1 protocol, metrics, results, and stability checks are recorded in [`paper/phase-1-validation.md`](paper/phase-1-validation.md).
-Phase 2 intervention protocols, exploratory results, and decision gate are recorded in [`paper/phase-2-validation.md`](paper/phase-2-validation.md).
-Phase 3 definitions, tuning-only cross-fitting protocol, stability results, and primary-method decision are recorded in [`paper/phase-3-validation.md`](paper/phase-3-validation.md).
-Phase 4 one-shot/recursive paths, frozen-subset results, and untouched-test findings are recorded in [`paper/phase-4-validation.md`](paper/phase-4-validation.md).
-Phase 5 matched-size baseline protocols and results are recorded in [`paper/phase-5-validation.md`](paper/phase-5-validation.md).
-Phase 6 scaling-factorial protocol, interaction decomposition, and results are recorded in [`paper/phase-6-validation.md`](paper/phase-6-validation.md).
-Phase 7 Dry Bean and Covertype provenance, protocols, accepted results, numerical resets, and decisions are recorded in [`paper/phase-7-validation.md`](paper/phase-7-validation.md).
+## Evidence and manuscript records
 
-## Planned experiment sequence
+Phase-specific validation is recorded in `paper/phase-0-validation.md` through `paper/phase-7-validation.md`. The Phase 8 design is in [`paper/phase-8-protocol.md`](paper/phase-8-protocol.md). Phase 9 evidence is documented in:
 
-1. `01_synthetic_baseline.py`: full-feature Base/TS/ConfTS with APS/RAPS.
-2. `02_single_feature_ablation.py`: retrain once per removed feature.
-3. `03_masking_sensitivity.py`: fixed-model masking/permutation diagnostic.
-4. `04_harm_ranking.py`: constrained and Pareto rankings using tuning data.
-5. `05_progressive_selection.py`: freeze a subset, recalibrate, evaluate once.
-6. `06_required_baselines.py`: matched-size comparison against required baselines.
-7. `07_scaling_interaction.py`: Base/TS/ConfTS x APS/RAPS interaction analysis.
-8. `08_real_dry_bean.py`: first real-data transfer with provenance and protocol audits.
-9. `09_real_covertype.py`: large mixed numeric/indicator real-data transfer with an audited selection compute budget.
+- [`paper/phase-9-plan.md`](paper/phase-9-plan.md)
+- [`paper/phase-9-claims-ledger.md`](paper/phase-9-claims-ledger.md)
+- [`paper/phase-9-evidence-map.md`](paper/phase-9-evidence-map.md)
+- [`paper/phase-9-verification.md`](paper/phase-9-verification.md)
+- [`paper/phase9_outputs/`](paper/phase9_outputs/)
+- [`paper/manuscript/`](paper/manuscript/)
+
+Phase 10 records the final repository/merge audit in [`paper/phase-10-final-audit.md`](paper/phase-10-final-audit.md).

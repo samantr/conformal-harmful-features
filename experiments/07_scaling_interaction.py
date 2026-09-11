@@ -15,6 +15,20 @@ def main() -> None:
         type=Path,
         help="Frozen baseline_selections.csv from Phase 5",
     )
+    replay = parser.add_mutually_exclusive_group()
+    replay.add_argument(
+        "--resume",
+        action="store_true",
+        help=(
+            "Reuse compatible Phase 6 artifacts, or refit Phase 6 only when "
+            "legacy artifacts lack grouped coverage metrics"
+        ),
+    )
+    replay.add_argument(
+        "--revalidate-only",
+        action="store_true",
+        help="Rebuild validation and reports from complete frozen Phase 6 artifacts",
+    )
     args = parser.parse_args()
     config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
     repository_root = Path(__file__).resolve().parents[1]
@@ -27,6 +41,8 @@ def main() -> None:
         output_dir,
         repository_root,
         selections_path=args.selections,
+        resume=args.resume,
+        revalidate_only=args.revalidate_only,
     )
     proposed = interactions.loc[
         interactions["selection_type"] == "proposed_selection",

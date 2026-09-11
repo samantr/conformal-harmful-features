@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Primary Base-APS results at $\alpha=0.10$ with tuning accuracy-loss allowance 0.01. Size reduction is all-feature minus selected mean size (positive favors removal); accuracy difference is selected minus all-feature accuracy (positive favors removal). Effect cells show estimate, paired Student-$t$ 95\% CI, and Holm-adjusted exact sign-flip $p$. Coverage is descriptive; no new coverage interval or noninferiority claim is implied.}
+\label{tab:t2-primary-compact}
+\scriptsize
+\begin{tabular}{llllll}
+\hline
+Setting & Selected size & $\Delta$ size vs all & Selected accuracy & $\Delta$ accuracy vs all & Selected coverage \\
+\hline
+\shortstack{Covertype\\LR / One-shot} & 1.6368 & \shortstack{0.0004\\CI [-0.0014, 0.0022]\\Holm p=0.6660} & 0.7240 & \shortstack{-0.000002\\CI [-0.0003, 0.0003]\\Holm p=0.9980} & 0.8996 \\
+\shortstack{Covertype\\LR / Recursive} & 1.6359 & \shortstack{0.0013\\CI [-0.0006, 0.0031]\\Holm p=0.3125} & 0.7238 & \shortstack{-0.0002\\CI [-0.0006, 0.0002]\\Holm p=0.8984} & 0.8995 \\
+\shortstack{Covertype\\Small NN / One-shot} & 1.2301 & \shortstack{0.0057\\CI [-0.0042, 0.0156]\\Holm p=0.4570} & 0.8647 & \shortstack{0.0028\\CI [-0.0005, 0.0061]\\Holm p=0.1641} & 0.9004 \\
+\shortstack{Covertype\\Small NN / Recursive} & 1.2315 & \shortstack{0.0043\\CI [-0.0060, 0.0146]\\Holm p=0.4570} & 0.8639 & \shortstack{0.0020\\CI [-0.0012, 0.0052]\\Holm p=0.1875} & 0.9003 \\
+\shortstack{Dry Bean\\LR / One-shot} & 1.0957 & \shortstack{-0.0010\\CI [-0.0025, 0.0005]\\Holm p=0.1844} & 0.9228 & \shortstack{-0.0005\\CI [-0.0011, 0.0001]\\Holm p=0.1016} & 0.9014 \\
+\shortstack{Dry Bean\\LR / Recursive} & 1.0961 & \shortstack{-0.0014\\CI [-0.0029, -0.000008]\\Holm p=0.1069} & 0.9226 & \shortstack{-0.0007\\CI [-0.0015, -0.000007]\\Holm p=0.1002} & 0.9015 \\
+\shortstack{Dry Bean\\Small NN / One-shot} & 1.0635 & \shortstack{0.0170\\CI [0.0079, 0.0260]\\Holm p=0.00000763} & 0.9284 & \shortstack{0.0033\\CI [0.0014, 0.0052]\\Holm p=0.0016} & 0.8994 \\
+\shortstack{Dry Bean\\Small NN / Recursive} & 1.0627 & \shortstack{0.0178\\CI [0.0088, 0.0267]\\Holm p=0.00000763} & 0.9288 & \shortstack{0.0037\\CI [0.0019, 0.0055]\\Holm p=0.0005} & 0.8987 \\
+\shortstack{HAR\\LR / One-shot} & 1.0014 & \shortstack{0.0008\\CI [-0.0020, 0.0036]\\Holm p=0.6998} & 0.9290 & \shortstack{0.0012\\CI [-0.0002, 0.0026]\\Holm p=0.1698} & 0.8891 \\
+\shortstack{HAR\\LR / Recursive} & 1.0008 & \shortstack{0.0014\\CI [-0.0017, 0.0045]\\Holm p=0.6998} & 0.9278 & \shortstack{0.0001\\CI [-0.0016, 0.0017]\\Holm p=0.9447} & 0.8880 \\
+\shortstack{HAR\\Small NN / One-shot} & 1.0040 & \shortstack{0.0178\\CI [0.0099, 0.0257]\\Holm p=0.0007} & 0.9204 & \shortstack{0.0027\\CI [-0.0010, 0.0064]\\Holm p=0.2849} & 0.8882 \\
+\shortstack{HAR\\Small NN / Recursive} & 1.0086 & \shortstack{0.0132\\CI [0.0046, 0.0218]\\Holm p=0.0050} & 0.9214 & \shortstack{0.0037\\CI [-0.0013, 0.0086]\\Holm p=0.2849} & 0.8922 \\
+\hline
+\end{tabular}
+\end{table*}

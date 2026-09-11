@@ -2,7 +2,37 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
-.venv/
+.coverage
+htmlcov/
+build/
+dist/
 
-# Generated experiment artifacts
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local IDE / OS state
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local temporary/log files
+*.log
+*.tmp
+*.bak
+
+# Locally packaged result bundles belong outside version control.
+# Curated manuscript evidence is committed under paper/phase9_outputs/.
+*.zip
+*.rar
+*.7z
+
+# Generated runtime experiment artifacts
 outputs/*/
+
+# Local manuscript build products
+paper/manuscript/_build/
