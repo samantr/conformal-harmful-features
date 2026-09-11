@@ -1,16 +1,16 @@
 \begin{table*}[t]
 \centering
-\caption{HAR subject-disjoint subject-weighted effects. Positive size reduction favors removal; positive coverage difference means higher selected-subset coverage. Intervals are the exactly reproduced 95\% percentile intervals from the frozen two-way seed/subject bootstrap. Each contrast has 100 seed $\times$ subject cells from 20 seeds and 26 unique held-out subject identifiers; these cells and the 146,500 grid rows are not independent subjects.}
+\caption{HAR subject-disjoint subject-weighted effects. Positive size reduction favors removal; positive coverage difference means higher selected-subset coverage. Effect cells show estimate and the exactly reproduced 95\% percentile interval from the frozen two-way seed/subject bootstrap. Each contrast has 100 seed $\times$ subject cells from 20 seeds and 26 unique held-out subject identifiers; these cells and the 146,500 grid rows are not independent subjects.}
 \label{tab:t5-har-compact}
-\small
-\begin{tabular}{llllllll}
+\scriptsize
+\begin{tabular}{llllll}
 \hline
-Model & Path & Cells & Seeds & Unique subjects & Size reduction [95\% CI] & Coverage difference [95\% CI] & Bootstrap reps \\
+Model/path & Cells & Cluster structure & Size reduction & Coverage difference & Bootstrap reps \\
 \hline
-LR & One-shot & 100 & 20 & 26 & 0.0008 [-0.003105, 0.004576] & 0.0010 [-0.001609, 0.003545] & 10000 \\
-LR & Recursive & 100 & 20 & 26 & 0.0014 [-0.002821, 0.005612] & -0.0002 [-0.002894, 0.002636] & 10000 \\
-Small NN & One-shot & 100 & 20 & 26 & 0.0174 [0.007472, 0.026864] & -0.0000 [-0.005227, 0.004836] & 10000 \\
-Small NN & Recursive & 100 & 20 & 26 & 0.0135 [0.003330, 0.023091] & 0.0039 [-0.003692, 0.010944] & 10000 \\
+\shortstack{LR\\One-shot} & 100 & \shortstack{20 seeds\\26 subjects} & \shortstack{0.0008\\CI [-0.0031, 0.0046]} & \shortstack{0.0010\\CI [-0.0016, 0.0035]} & 10000 \\
+\shortstack{LR\\Recursive} & 100 & \shortstack{20 seeds\\26 subjects} & \shortstack{0.0014\\CI [-0.0028, 0.0056]} & \shortstack{-0.0002\\CI [-0.0029, 0.0026]} & 10000 \\
+\shortstack{Small NN\\One-shot} & 100 & \shortstack{20 seeds\\26 subjects} & \shortstack{0.0174\\CI [0.0075, 0.0269]} & \shortstack{-0.0000\\CI [-0.0052, 0.0048]} & 10000 \\
+\shortstack{Small NN\\Recursive} & 100 & \shortstack{20 seeds\\26 subjects} & \shortstack{0.0135\\CI [0.0033, 0.0231]} & \shortstack{0.0039\\CI [-0.0037, 0.0109]} & 10000 \\
 \hline
 \end{tabular}
 \end{table*}
