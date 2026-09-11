@@ -1,0 +1,134 @@
+{
+  "status": "PASS",
+  "scope": "Frozen-output reporting only; no model fitting, recalibration, retuning, feature reselection, new seeds, or new tests.",
+  "primary_filter": "Base APS, alpha 0.10, all features plus phase8_primary_selected proposed paths.",
+  "input_hashes": {
+    "phase8_protocol": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_protocol(3).json",
+      "bytes": 1147,
+      "sha256": "6a5d4e9d84f2161aa36d4821f00f6bf64a9f1e86bb8a2eb5eb5418a0ae621b78"
+    },
+    "phase8_precision_extension_aggregate": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_precision_extension_aggregate(3).json",
+      "bytes": 435,
+      "sha256": "017c82a0fec9a6c6c0011aced524f6f05f42ccfbed20a2ec7d65ffc55d70d8fb"
+    },
+    "phase8_paired_size_effects": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_paired_size_effects(3).csv",
+      "bytes": 4248,
+      "sha256": "73ec93af2086f5e34bf100f1a8b7bd19fc4e1e018ea6b18ea6845d36c132ef35"
+    },
+    "phase8_paired_accuracy_effects": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_paired_accuracy_effects(3).csv",
+      "bytes": 4229,
+      "sha256": "32801ba59ddfd6aa78ae07d2183f67175a6462f763d4478d001db529f4295e5a"
+    },
+    "phase8_matched_standard_effects": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_matched_standard_effects(3).csv",
+      "bytes": 42986,
+      "sha256": "2e7c0a2695cdf769b8b78a4ac1ac1596fc3b0fdc68a858250d1e3e08e8f82322"
+    },
+    "phase8_accuracy_loss_sensitivity_effects": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_accuracy_loss_sensitivity_effects(3).csv",
+      "bytes": 46960,
+      "sha256": "12fe5754a3895b99eca6de6bd2415f4a146b928bb0395a8741fd0f1b8fa02105"
+    },
+    "phase8_subset_size_sensitivity_effects": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_subset_size_sensitivity_effects(3).csv",
+      "bytes": 63736,
+      "sha256": "7f1196ee8d07ea6c7438285c85ee0d13c0a4a5169070bec3a148040fec7ea6a3"
+    },
+    "phase8_rank_stability_summary": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_rank_stability_summary(3).csv",
+      "bytes": 22008,
+      "sha256": "42184d6634b6db6fe652b4a3291d7cfb174a067baa23cfc828a7a1701acf7be1"
+    },
+    "phase8_h3_aps_summary": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_h3_aps_summary(3).csv",
+      "bytes": 13134,
+      "sha256": "3a18bba5ef83946396a9ba6aa958b1ce16dfd1b8231ccdc5ced9cd64428a9bb2"
+    },
+    "phase8_har_subject_effects": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_har_subject_effects(3).csv",
+      "bytes": 1550,
+      "sha256": "71ef171ce978c05ca937b942aacfece89bb7c626b6ac713abbe43b8d9d240412"
+    },
+    "phase8_numerical_diagnostics": {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_numerical_diagnostics(3).csv",
+      "bytes": 835,
+      "sha256": "16bfe6ba3fd2511910b8d7124789db3001be3ee68695e3f36a07afbf4b5d0b5b"
+    },
+    "aggregate": {
+      "path": "/tmp/phase8_all_results.csv",
+      "bytes": 991392656,
+      "sha256": "12cbba807af83d4b1c97bdbc9d60d237e9db696a087f595008d6422a96ddcfe2"
+    },
+    "primary_absolute": {
+      "path": "paper/phase9_audit/primary_absolute.csv",
+      "bytes": 3198,
+      "sha256": "f5dc1b2038a795cb2f1296744c4fa87469bdedacabca902950a9008c5c728153"
+    },
+    "h1_overlap": {
+      "path": "paper/phase9_audit/h1_overlap_verified.csv",
+      "bytes": 7342,
+      "sha256": "9cad0aa1d057741a7f3f20e1354eb7f5b322e7c339787b25085209c85609b3c9"
+    },
+    "har_primary_subjects": {
+      "path": "paper/phase9_audit/har_primary_subjects.csv",
+      "bytes": 283044,
+      "sha256": "dca447e0316ae839ce17c956fb8e8fbc8db4bf16d80f409031d1117cce66e2da"
+    },
+    "har_subject_effects_reproduced": {
+      "path": "paper/phase9_audit/har_subject_effects_reproduced.csv",
+      "bytes": 1550,
+      "sha256": "71ef171ce978c05ca937b942aacfece89bb7c626b6ac713abbe43b8d9d240412"
+    },
+    "audit": {
+      "path": "paper/phase9_audit/audit.json",
+      "bytes": 118096,
+      "sha256": "8ae14d0a2bfb35a0bcc664d3b1c33e1094741735697564c421ca5edbe0164d79"
+    },
+    "har_verification": {
+      "path": "paper/phase9_audit/har_verification.json",
+      "bytes": 12688,
+      "sha256": "3b2f5f378560b64d7dc4d7d619c52767521682700d452654f811f63f1fbc59fe"
+    }
+  },
+  "tables": [
+    "table_t1_design_audit.csv",
+    "table_t1_design_audit.tex",
+    "table_t2_primary_results.csv",
+    "table_t2_primary_results.tex",
+    "table_t3a_matched_baselines.csv",
+    "table_t3a_matched_baselines.tex",
+    "table_t3b_rank_stability.csv",
+    "table_t3b_rank_stability.tex",
+    "table_t4_scaling_interaction.csv",
+    "table_t4_scaling_interaction.tex",
+    "table_t5a_har_subject_effects.csv",
+    "table_t5a_har_subject_effects.tex",
+    "table_t5b_numerical_diagnostics.csv",
+    "table_t5b_numerical_diagnostics.tex"
+  ],
+  "figures": [
+    "figure_f1_primary_effects.pdf",
+    "figure_f1_primary_effects.png",
+    "figure_f2_overlap_stability.pdf",
+    "figure_f2_overlap_stability.png",
+    "figure_f3_sensitivity_small_nn.pdf",
+    "figure_f3_sensitivity_small_nn.png",
+    "figure_f4_scaling_interaction.pdf",
+    "figure_f4_scaling_interaction.png",
+    "figure_f5_har_subject_effects.pdf",
+    "figure_f5_har_subject_effects.png",
+    "figure_s3_sensitivity_lr.pdf",
+    "figure_s3_sensitivity_lr.png"
+  ],
+  "boundaries": [
+    "F1 coverage panel is descriptive and has no newly computed interval.",
+    "F3 preserves every frozen allowance/removal cell; LR is separated as a supplement for legibility.",
+    "F4 shows coverage beside size and retains HAR undercoverage.",
+    "F5 uses the frozen two-way bootstrap summaries; subject/grid rows are not independent replicates.",
+    "H3 intervals are supplied Phase 8 values; their missing generator is not replaced here."
+  ]
+}

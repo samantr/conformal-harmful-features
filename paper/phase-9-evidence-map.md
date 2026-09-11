@@ -85,3 +85,13 @@ The upload request above is retained as history, not a request to upload files a
 | T4/F4 | Frozen H3 summaries, all-results and numerical diagnostics | Means verified; H3 intervals remain supplied; retain undercoverage/saturation. |
 | T5/F5 | `phase9_audit/har_primary_subjects.csv`, `phase9_audit/har_subject_effects_reproduced.csv` | Plot 100 seed/subject cells per contrast; do not treat 146,500 grid rows/windows as independent subjects. |
 | F3 | Frozen allowance/subset-size summaries and all-results | Show full prespecified sensitivity grid; no post-hoc optimum. |
+
+## Generated evidence package
+
+The deterministic reporting package is now in `paper/phase9_outputs/`. Its `manifest.json` records source hashes and transformation boundaries. Canonical numeric sources are CSV; TeX versions are generated table renderings; figures are available in vector PDF and 220-dpi PNG. `generate_phase9_tables_figures.py` performs no fitting, calibration, tuning, selection or new inference.
+
+- T1–T5 are materialized as seven table pairs because T3 and T5 each have two logically distinct panels.
+- F1–F5 are materialized in both formats; the full LR sensitivity figure is separated as supplement S3 for legibility.
+- F1 coverage remains descriptive without a newly constructed interval.
+- F5 uses the exactly reproduced frozen bootstrap output and the audited 600-row primary subject source.
+- H3 intervals remain supplied evidence because their original generating script is unavailable.

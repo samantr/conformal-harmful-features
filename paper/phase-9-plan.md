@@ -83,3 +83,7 @@ Main evidence gap resolved by user uploads. Actual rows confirm 75,800 results, 
 Final labels: H1 supported with qualification for selection distinctness; H2 partially supported overall, strongest on Dry Bean small NN, with HAR efficiency evidence limited by undercoverage and incomplete matched-comparator superiority; H3 partially supported descriptively as sub-additive complementarity, especially HAR small-NN one-shot; H4 not generally supported. See the populated ledger for boundaries.
 
 Steps 1–3 are complete within the audit scope described in phase-9-verification.md, including the complete HAR subject-row verification. No experiments have been run. The next step is to generate the planned tables and figures from the audited compact sources, review them and the existing paper structure, and only then begin major manuscript drafting. H1 can use selected_indices in the main CSV; H3 RAPS summaries must be labeled as within-seed averages over nine fixed cells and not plotted as individual settings.
+
+## Table/figure production update
+
+T1–T5 and F1–F5 are generated in `paper/phase9_outputs/` with source hashes and reporting boundaries. The package includes seven CSV/TeX table pairs, five main PDF/PNG figures and one supplementary LR sensitivity figure. Visual QA and file-integrity checks passed. No claim label changed. The next manuscript task is a focused content review of these displays, followed by drafting Results around the verified tables/figures and then Discussion around the stated limitations.

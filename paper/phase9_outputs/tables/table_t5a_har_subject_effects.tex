@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\caption{HAR two-way seed/subject bootstrap effects.}
+\label{tab:har-subject-effects}
+\begin{tabular}{lllllllllll}
+\hline
+dataset & model & method & metric & n\_cells & n\_seeds & n\_subjects & mean\_difference & ci\_lower & ci\_upper & bootstrap\_repetitions \\
+\hline
+HAR & LR & One-shot & mean\_size\_reduction\_vs\_all & 100 & 20 & 26 & 0.000810 & -0.003105 & 0.004576 & 10000 \\
+HAR & LR & One-shot & coverage\_difference\_vs\_all & 100 & 20 & 26 & 0.000988 & -0.001609 & 0.003545 & 10000 \\
+HAR & LR & Recursive & mean\_size\_reduction\_vs\_all & 100 & 20 & 26 & 0.001392 & -0.002821 & 0.005612 & 10000 \\
+HAR & LR & Recursive & coverage\_difference\_vs\_all & 100 & 20 & 26 & -0.000176 & -0.002894 & 0.002636 & 10000 \\
+HAR & Small NN & One-shot & mean\_size\_reduction\_vs\_all & 100 & 20 & 26 & 0.017361 & 0.007472 & 0.026864 & 10000 \\
+HAR & Small NN & One-shot & coverage\_difference\_vs\_all & 100 & 20 & 26 & -0.000012 & -0.005227 & 0.004836 & 10000 \\
+HAR & Small NN & Recursive & mean\_size\_reduction\_vs\_all & 100 & 20 & 26 & 0.013495 & 0.003330 & 0.023091 & 10000 \\
+HAR & Small NN & Recursive & coverage\_difference\_vs\_all & 100 & 20 & 26 & 0.003886 & -0.003692 & 0.010944 & 10000 \\
+\hline
+\end{tabular}
+\end{table}

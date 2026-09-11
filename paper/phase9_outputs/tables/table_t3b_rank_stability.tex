@@ -1,0 +1,137 @@
+\begin{table}[t]
+\centering
+\caption{Across-seed feature-identity stability.}
+\label{tab:rank-stability}
+\begin{tabular}{llllllllllll}
+\hline
+dataset & model & method & stability\_type & top\_k & seed\_pairs & spearman\_mean & spearman\_min & jaccard\_mean & jaccard\_min & kuncheva\_mean & kuncheva\_min \\
+\hline
+Covertype & LR & mutual\_information & complete\_harmfulness\_ranking & 1 & 45 & 0.891355 & 0.836021 & 0.355556 & 0.000000 & 0.343396 & -0.018868 \\
+Covertype & LR & mutual\_information & complete\_harmfulness\_ranking & 3 & 45 & 0.891355 & 0.836021 & 0.228889 & 0.000000 & 0.294118 & -0.058824 \\
+Covertype & LR & mutual\_information & complete\_harmfulness\_ranking & 5 & 45 & 0.891355 & 0.836021 & 0.198413 & 0.000000 & 0.240816 & -0.102041 \\
+Covertype & LR & rfe & complete\_harmfulness\_ranking & 1 & 45 & 0.970711 & 0.938327 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Covertype & LR & rfe & complete\_harmfulness\_ranking & 3 & 45 & 0.970711 & 0.938327 & 0.811111 & 0.500000 & 0.866667 & 0.647059 \\
+Covertype & LR & rfe & complete\_harmfulness\_ranking & 5 & 45 & 0.970711 & 0.938327 & 0.800000 & 0.666667 & 0.867755 & 0.779592 \\
+Covertype & LR & crfe & complete\_harmfulness\_ranking & 1 & 45 & 0.797119 & 0.603049 & 0.622222 & 0.000000 & 0.615094 & -0.018868 \\
+Covertype & LR & crfe & complete\_harmfulness\_ranking & 3 & 45 & 0.797119 & 0.603049 & 0.900000 & 0.500000 & 0.929412 & 0.647059 \\
+Covertype & LR & crfe & complete\_harmfulness\_ranking & 5 & 45 & 0.797119 & 0.603049 & 0.616931 & 0.428571 & 0.725714 & 0.559184 \\
+Covertype & LR & permutation\_importance & complete\_harmfulness\_ranking & 1 & 45 & 0.867680 & 0.786316 & 0.088889 & 0.000000 & 0.071698 & -0.018868 \\
+Covertype & LR & permutation\_importance & complete\_harmfulness\_ranking & 3 & 45 & 0.867680 & 0.786316 & 0.146667 & 0.000000 & 0.184314 & -0.058824 \\
+Covertype & LR & permutation\_importance & complete\_harmfulness\_ranking & 5 & 45 & 0.867680 & 0.786316 & 0.168342 & 0.000000 & 0.196735 & -0.102041 \\
+Covertype & LR & shap & complete\_harmfulness\_ranking & 1 & 45 & 0.731690 & 0.585897 & 0.488889 & 0.000000 & 0.479245 & -0.018868 \\
+Covertype & LR & shap & complete\_harmfulness\_ranking & 3 & 45 & 0.731690 & 0.585897 & 0.508889 & 0.200000 & 0.631373 & 0.294118 \\
+Covertype & LR & shap & complete\_harmfulness\_ranking & 5 & 45 & 0.731690 & 0.585897 & 0.628307 & 0.250000 & 0.730612 & 0.338776 \\
+Covertype & Small NN & mutual\_information & complete\_harmfulness\_ranking & 1 & 45 & 0.891355 & 0.836021 & 0.355556 & 0.000000 & 0.343396 & -0.018868 \\
+Covertype & Small NN & mutual\_information & complete\_harmfulness\_ranking & 3 & 45 & 0.891355 & 0.836021 & 0.228889 & 0.000000 & 0.294118 & -0.058824 \\
+Covertype & Small NN & mutual\_information & complete\_harmfulness\_ranking & 5 & 45 & 0.891355 & 0.836021 & 0.198413 & 0.000000 & 0.240816 & -0.102041 \\
+Covertype & Small NN & rfe & complete\_harmfulness\_ranking & 1 & 45 & 0.970711 & 0.938327 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Covertype & Small NN & rfe & complete\_harmfulness\_ranking & 3 & 45 & 0.970711 & 0.938327 & 0.811111 & 0.500000 & 0.866667 & 0.647059 \\
+Covertype & Small NN & rfe & complete\_harmfulness\_ranking & 5 & 45 & 0.970711 & 0.938327 & 0.800000 & 0.666667 & 0.867755 & 0.779592 \\
+Covertype & Small NN & crfe & complete\_harmfulness\_ranking & 1 & 45 & 0.797119 & 0.603049 & 0.622222 & 0.000000 & 0.615094 & -0.018868 \\
+Covertype & Small NN & crfe & complete\_harmfulness\_ranking & 3 & 45 & 0.797119 & 0.603049 & 0.900000 & 0.500000 & 0.929412 & 0.647059 \\
+Covertype & Small NN & crfe & complete\_harmfulness\_ranking & 5 & 45 & 0.797119 & 0.603049 & 0.616931 & 0.428571 & 0.725714 & 0.559184 \\
+Covertype & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 1 & 45 & 0.970558 & 0.949076 & 0.466667 & 0.000000 & 0.456604 & -0.018868 \\
+Covertype & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 3 & 45 & 0.970558 & 0.949076 & 0.471111 & 0.200000 & 0.592157 & 0.294118 \\
+Covertype & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 5 & 45 & 0.970558 & 0.949076 & 0.600265 & 0.250000 & 0.711020 & 0.338776 \\
+Covertype & Small NN & shap & complete\_harmfulness\_ranking & 1 & 45 & 0.755951 & 0.646274 & 0.488889 & 0.000000 & 0.479245 & -0.018868 \\
+Covertype & Small NN & shap & complete\_harmfulness\_ranking & 3 & 45 & 0.755951 & 0.646274 & 0.508889 & 0.200000 & 0.631373 & 0.294118 \\
+Covertype & Small NN & shap & complete\_harmfulness\_ranking & 5 & 45 & 0.755951 & 0.646274 & 0.628307 & 0.250000 & 0.730612 & 0.338776 \\
+Dry Bean & LR & mutual\_information & complete\_harmfulness\_ranking & 1 & 190 & 0.988529 & 0.964706 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Dry Bean & LR & mutual\_information & complete\_harmfulness\_ranking & 3 & 190 & 0.988529 & 0.964706 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Dry Bean & LR & mutual\_information & complete\_harmfulness\_ranking & 5 & 190 & 0.988529 & 0.964706 & 0.829825 & 0.666667 & 0.851483 & 0.709091 \\
+Dry Bean & LR & rfe & complete\_harmfulness\_ranking & 1 & 190 & 0.788297 & 0.347059 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Dry Bean & LR & rfe & complete\_harmfulness\_ranking & 3 & 190 & 0.788297 & 0.347059 & 0.950000 & 0.500000 & 0.958974 & 0.589744 \\
+Dry Bean & LR & rfe & complete\_harmfulness\_ranking & 5 & 190 & 0.788297 & 0.347059 & 0.680952 & 0.428571 & 0.704498 & 0.418182 \\
+Dry Bean & LR & crfe & complete\_harmfulness\_ranking & 1 & 190 & 0.316006 & -0.376471 & 0.363158 & 0.000000 & 0.320702 & -0.066667 \\
+Dry Bean & LR & crfe & complete\_harmfulness\_ranking & 3 & 190 & 0.316006 & -0.376471 & 0.326316 & 0.000000 & 0.296086 & -0.230769 \\
+Dry Bean & LR & crfe & complete\_harmfulness\_ranking & 5 & 190 & 0.316006 & -0.376471 & 0.447431 & 0.111111 & 0.398278 & -0.163636 \\
+Dry Bean & LR & permutation\_importance & complete\_harmfulness\_ranking & 1 & 190 & 0.932276 & 0.844118 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Dry Bean & LR & permutation\_importance & complete\_harmfulness\_ranking & 3 & 190 & 0.932276 & 0.844118 & 0.692105 & 0.500000 & 0.747368 & 0.589744 \\
+Dry Bean & LR & permutation\_importance & complete\_harmfulness\_ranking & 5 & 190 & 0.932276 & 0.844118 & 0.736842 & 0.666667 & 0.770335 & 0.709091 \\
+Dry Bean & LR & shap & complete\_harmfulness\_ranking & 1 & 190 & 0.776084 & 0.420588 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Dry Bean & LR & shap & complete\_harmfulness\_ranking & 3 & 190 & 0.776084 & 0.420588 & 0.492632 & 0.200000 & 0.537922 & 0.179487 \\
+Dry Bean & LR & shap & complete\_harmfulness\_ranking & 5 & 190 & 0.776084 & 0.420588 & 0.542690 & 0.111111 & 0.548325 & -0.163636 \\
+Dry Bean & Small NN & mutual\_information & complete\_harmfulness\_ranking & 1 & 190 & 0.988529 & 0.964706 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Dry Bean & Small NN & mutual\_information & complete\_harmfulness\_ranking & 3 & 190 & 0.988529 & 0.964706 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Dry Bean & Small NN & mutual\_information & complete\_harmfulness\_ranking & 5 & 190 & 0.988529 & 0.964706 & 0.829825 & 0.666667 & 0.851483 & 0.709091 \\
+Dry Bean & Small NN & rfe & complete\_harmfulness\_ranking & 1 & 190 & 0.788297 & 0.347059 & 1.000000 & 1.000000 & 1.000000 & 1.000000 \\
+Dry Bean & Small NN & rfe & complete\_harmfulness\_ranking & 3 & 190 & 0.788297 & 0.347059 & 0.950000 & 0.500000 & 0.958974 & 0.589744 \\
+Dry Bean & Small NN & rfe & complete\_harmfulness\_ranking & 5 & 190 & 0.788297 & 0.347059 & 0.680952 & 0.428571 & 0.704498 & 0.418182 \\
+Dry Bean & Small NN & crfe & complete\_harmfulness\_ranking & 1 & 190 & 0.316006 & -0.376471 & 0.363158 & 0.000000 & 0.320702 & -0.066667 \\
+Dry Bean & Small NN & crfe & complete\_harmfulness\_ranking & 3 & 190 & 0.316006 & -0.376471 & 0.326316 & 0.000000 & 0.296086 & -0.230769 \\
+Dry Bean & Small NN & crfe & complete\_harmfulness\_ranking & 5 & 190 & 0.316006 & -0.376471 & 0.447431 & 0.111111 & 0.398278 & -0.163636 \\
+Dry Bean & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 1 & 190 & 0.728452 & 0.370588 & 0.900000 & 0.000000 & 0.893333 & -0.066667 \\
+Dry Bean & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 3 & 190 & 0.728452 & 0.370588 & 0.448947 & 0.200000 & 0.488259 & 0.179487 \\
+Dry Bean & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 5 & 190 & 0.728452 & 0.370588 & 0.462302 & 0.111111 & 0.442679 & -0.163636 \\
+Dry Bean & Small NN & shap & complete\_harmfulness\_ranking & 1 & 190 & 0.602167 & 0.114706 & 0.900000 & 0.000000 & 0.893333 & -0.066667 \\
+Dry Bean & Small NN & shap & complete\_harmfulness\_ranking & 3 & 190 & 0.602167 & 0.114706 & 0.420526 & 0.200000 & 0.466667 & 0.179487 \\
+Dry Bean & Small NN & shap & complete\_harmfulness\_ranking & 5 & 190 & 0.602167 & 0.114706 & 0.404490 & 0.111111 & 0.356938 & -0.163636 \\
+HAR & LR & mutual\_information & complete\_harmfulness\_ranking & 1 & 190 & 0.984239 & 0.965947 & 0.142105 & 0.000000 & 0.140573 & -0.001786 \\
+HAR & LR & mutual\_information & complete\_harmfulness\_ranking & 3 & 190 & 0.984239 & 0.965947 & 0.259474 & 0.000000 & 0.368553 & -0.005376 \\
+HAR & LR & mutual\_information & complete\_harmfulness\_ranking & 5 & 190 & 0.984239 & 0.965947 & 0.333438 & 0.000000 & 0.465765 & -0.008993 \\
+HAR & LR & rfe & complete\_harmfulness\_ranking & 1 & 190 & 0.687346 & 0.589224 & 0.042105 & 0.000000 & 0.040395 & -0.001786 \\
+HAR & LR & rfe & complete\_harmfulness\_ranking & 3 & 190 & 0.687346 & 0.589224 & 0.050526 & 0.000000 & 0.073995 & -0.005376 \\
+HAR & LR & rfe & complete\_harmfulness\_ranking & 5 & 190 & 0.687346 & 0.589224 & 0.059545 & 0.000000 & 0.091906 & -0.008993 \\
+HAR & LR & crfe & complete\_harmfulness\_ranking & 1 & 190 & 0.594712 & 0.419932 & 0.131579 & 0.000000 & 0.130028 & -0.001786 \\
+HAR & LR & crfe & complete\_harmfulness\_ranking & 3 & 190 & 0.594712 & 0.419932 & 0.120526 & 0.000000 & 0.174533 & -0.005376 \\
+HAR & LR & crfe & complete\_harmfulness\_ranking & 5 & 190 & 0.594712 & 0.419932 & 0.132644 & 0.000000 & 0.204489 & -0.008993 \\
+HAR & LR & permutation\_importance & complete\_harmfulness\_ranking & 1 & 190 & 0.079591 & -0.434527 & 0.010526 & 0.000000 & 0.008759 & -0.001786 \\
+HAR & LR & permutation\_importance & complete\_harmfulness\_ranking & 3 & 190 & 0.079591 & -0.434527 & 0.009474 & 0.000000 & 0.010498 & -0.005376 \\
+HAR & LR & permutation\_importance & complete\_harmfulness\_ranking & 5 & 190 & 0.079591 & -0.434527 & 0.014766 & 0.000000 & 0.017560 & -0.008993 \\
+HAR & LR & shap & complete\_harmfulness\_ranking & 1 & 190 & 0.638787 & 0.480017 & 0.052632 & 0.000000 & 0.050940 & -0.001786 \\
+HAR & LR & shap & complete\_harmfulness\_ranking & 3 & 190 & 0.638787 & 0.480017 & 0.048947 & 0.000000 & 0.073995 & -0.005376 \\
+HAR & LR & shap & complete\_harmfulness\_ranking & 5 & 190 & 0.638787 & 0.480017 & 0.051086 & 0.000000 & 0.080223 & -0.008993 \\
+HAR & Small NN & mutual\_information & complete\_harmfulness\_ranking & 1 & 190 & 0.984239 & 0.965947 & 0.142105 & 0.000000 & 0.140573 & -0.001786 \\
+HAR & Small NN & mutual\_information & complete\_harmfulness\_ranking & 3 & 190 & 0.984239 & 0.965947 & 0.259474 & 0.000000 & 0.368553 & -0.005376 \\
+HAR & Small NN & mutual\_information & complete\_harmfulness\_ranking & 5 & 190 & 0.984239 & 0.965947 & 0.333438 & 0.000000 & 0.465765 & -0.008993 \\
+HAR & Small NN & rfe & complete\_harmfulness\_ranking & 1 & 190 & 0.687346 & 0.589224 & 0.042105 & 0.000000 & 0.040395 & -0.001786 \\
+HAR & Small NN & rfe & complete\_harmfulness\_ranking & 3 & 190 & 0.687346 & 0.589224 & 0.050526 & 0.000000 & 0.073995 & -0.005376 \\
+HAR & Small NN & rfe & complete\_harmfulness\_ranking & 5 & 190 & 0.687346 & 0.589224 & 0.059545 & 0.000000 & 0.091906 & -0.008993 \\
+HAR & Small NN & crfe & complete\_harmfulness\_ranking & 1 & 190 & 0.594712 & 0.419932 & 0.131579 & 0.000000 & 0.130028 & -0.001786 \\
+HAR & Small NN & crfe & complete\_harmfulness\_ranking & 3 & 190 & 0.594712 & 0.419932 & 0.120526 & 0.000000 & 0.174533 & -0.005376 \\
+HAR & Small NN & crfe & complete\_harmfulness\_ranking & 5 & 190 & 0.594712 & 0.419932 & 0.132644 & 0.000000 & 0.204489 & -0.008993 \\
+HAR & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 1 & 190 & 0.067166 & -0.244290 & 0.005263 & 0.000000 & 0.003487 & -0.001786 \\
+HAR & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 3 & 190 & 0.067166 & -0.244290 & 0.003158 & 0.000000 & -0.000085 & -0.005376 \\
+HAR & Small NN & permutation\_importance & complete\_harmfulness\_ranking & 5 & 190 & 0.067166 & -0.244290 & 0.007602 & 0.000000 & 0.004814 & -0.008993 \\
+HAR & Small NN & shap & complete\_harmfulness\_ranking & 1 & 190 & 0.401571 & 0.268826 & 0.052632 & 0.000000 & 0.050940 & -0.001786 \\
+HAR & Small NN & shap & complete\_harmfulness\_ranking & 3 & 190 & 0.401571 & 0.268826 & 0.041053 & 0.000000 & 0.061649 & -0.005376 \\
+HAR & Small NN & shap & complete\_harmfulness\_ranking & 5 & 190 & 0.401571 & 0.268826 & 0.046491 & 0.000000 & 0.072789 & -0.008993 \\
+Covertype & LR & One-shot & progressive\_removal\_path & 1 & 45 & -- & -- & 0.355556 & 0.000000 & 0.343396 & -0.018868 \\
+Covertype & LR & One-shot & progressive\_removal\_path & 3 & 45 & -- & -- & 0.193333 & 0.000000 & 0.247059 & -0.058824 \\
+Covertype & LR & One-shot & progressive\_removal\_path & 5 & 45 & -- & -- & 0.131481 & 0.000000 & 0.137959 & -0.102041 \\
+Covertype & LR & Recursive & progressive\_removal\_path & 1 & 45 & -- & -- & 0.355556 & 0.000000 & 0.343396 & -0.018868 \\
+Covertype & LR & Recursive & progressive\_removal\_path & 3 & 45 & -- & -- & 0.222222 & 0.000000 & 0.286275 & -0.058824 \\
+Covertype & LR & Recursive & progressive\_removal\_path & 5 & 45 & -- & -- & 0.246473 & 0.111111 & 0.309388 & 0.118367 \\
+Covertype & Small NN & One-shot & progressive\_removal\_path & 1 & 45 & -- & -- & 0.000000 & 0.000000 & -0.018868 & -0.018868 \\
+Covertype & Small NN & One-shot & progressive\_removal\_path & 3 & 45 & -- & -- & 0.026667 & 0.000000 & -0.011765 & -0.058824 \\
+Covertype & Small NN & One-shot & progressive\_removal\_path & 5 & 45 & -- & -- & 0.038272 & 0.000000 & -0.028571 & -0.102041 \\
+Covertype & Small NN & Recursive & progressive\_removal\_path & 1 & 45 & -- & -- & 0.000000 & 0.000000 & -0.018868 & -0.018868 \\
+Covertype & Small NN & Recursive & progressive\_removal\_path & 3 & 45 & -- & -- & 0.055556 & 0.000000 & 0.035294 & -0.058824 \\
+Covertype & Small NN & Recursive & progressive\_removal\_path & 5 & 45 & -- & -- & 0.071252 & 0.000000 & 0.030204 & -0.102041 \\
+Dry Bean & LR & One-shot & progressive\_removal\_path & 1 & 190 & -- & -- & 0.078947 & 0.000000 & 0.017544 & -0.066667 \\
+Dry Bean & LR & One-shot & progressive\_removal\_path & 3 & 190 & -- & -- & 0.148947 & 0.000000 & 0.052092 & -0.230769 \\
+Dry Bean & LR & One-shot & progressive\_removal\_path & 5 & 190 & -- & -- & 0.288346 & 0.000000 & 0.162488 & -0.454545 \\
+Dry Bean & LR & Recursive & progressive\_removal\_path & 1 & 190 & -- & -- & 0.078947 & 0.000000 & 0.017544 & -0.066667 \\
+Dry Bean & LR & Recursive & progressive\_removal\_path & 3 & 190 & -- & -- & 0.153158 & 0.000000 & 0.058570 & -0.230769 \\
+Dry Bean & LR & Recursive & progressive\_removal\_path & 5 & 190 & -- & -- & 0.248308 & 0.000000 & 0.099713 & -0.454545 \\
+Dry Bean & Small NN & One-shot & progressive\_removal\_path & 1 & 190 & -- & -- & 0.047368 & 0.000000 & -0.016140 & -0.066667 \\
+Dry Bean & Small NN & One-shot & progressive\_removal\_path & 3 & 190 & -- & -- & 0.161579 & 0.000000 & 0.062888 & -0.230769 \\
+Dry Bean & Small NN & One-shot & progressive\_removal\_path & 5 & 190 & -- & -- & 0.228028 & 0.000000 & 0.058373 & -0.454545 \\
+Dry Bean & Small NN & Recursive & progressive\_removal\_path & 1 & 190 & -- & -- & 0.047368 & 0.000000 & -0.016140 & -0.066667 \\
+Dry Bean & Small NN & Recursive & progressive\_removal\_path & 3 & 190 & -- & -- & 0.132632 & 0.000000 & 0.021862 & -0.230769 \\
+Dry Bean & Small NN & Recursive & progressive\_removal\_path & 5 & 190 & -- & -- & 0.227799 & 0.000000 & 0.061435 & -0.454545 \\
+HAR & LR & One-shot & progressive\_removal\_path & 1 & 190 & -- & -- & 0.089474 & 0.000000 & 0.087848 & -0.001786 \\
+HAR & LR & One-shot & progressive\_removal\_path & 3 & 190 & -- & -- & 0.068421 & 0.000000 & 0.107508 & -0.005376 \\
+HAR & LR & One-shot & progressive\_removal\_path & 5 & 190 & -- & -- & 0.047870 & 0.000000 & 0.075975 & -0.008993 \\
+HAR & LR & Recursive & progressive\_removal\_path & 1 & 190 & -- & -- & 0.089474 & 0.000000 & 0.087848 & -0.001786 \\
+HAR & LR & Recursive & progressive\_removal\_path & 3 & 190 & -- & -- & 0.067368 & 0.000000 & 0.103980 & -0.005376 \\
+HAR & LR & Recursive & progressive\_removal\_path & 5 & 190 & -- & -- & 0.049770 & 0.000000 & 0.078099 & -0.008993 \\
+HAR & Small NN & One-shot & progressive\_removal\_path & 1 & 190 & -- & -- & 0.000000 & 0.000000 & -0.001786 & -0.001786 \\
+HAR & Small NN & One-shot & progressive\_removal\_path & 3 & 190 & -- & -- & 0.004211 & 0.000000 & 0.001679 & -0.005376 \\
+HAR & Small NN & One-shot & progressive\_removal\_path & 5 & 190 & -- & -- & 0.004678 & 0.000000 & -0.000496 & -0.008993 \\
+HAR & Small NN & Recursive & progressive\_removal\_path & 1 & 190 & -- & -- & 0.000000 & 0.000000 & -0.001786 & -0.001786 \\
+HAR & Small NN & Recursive & progressive\_removal\_path & 3 & 190 & -- & -- & 0.003158 & 0.000000 & -0.000085 & -0.005376 \\
+HAR & Small NN & Recursive & progressive\_removal\_path & 5 & 190 & -- & -- & 0.004678 & 0.000000 & -0.000496 & -0.008993 \\
+\hline
+\end{tabular}
+\end{table}
