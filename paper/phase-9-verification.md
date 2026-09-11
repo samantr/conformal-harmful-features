@@ -10,6 +10,8 @@ Final JSON records 50 audited units, 12 recovered initial units and 20 extension
 
 The read-only `audit_phase9_outputs.py` reconciles 24 primary size/accuracy mean effects, all 60 H1 overlap summaries, all 108 H3 mean-contrast summaries, rank-summary means, numerical flags and four subject-coverage effect means. Primary/H3 arithmetic differences are below 1e-15. Source hashes and detailed checks are in `phase9_audit/audit.json`. No experimental modules are imported, and no models, temperatures, calibration thresholds, subsets or seeds are generated. Stored p-values and confidence intervals are reported as supplied; their entire statistical implementation was not independently repeated.
 
+The follow-up `verify_phase9_har.py` audit reads the 4,424,509,870-byte subject CSV in 5,000-row chunks and retains only necessary columns. It independently verifies all 146,500 subject rows against all 29,300 HAR aggregate cells, then executes the exact frozen `_primary_proposed`, `_paired_subject_bootstrap_table` and `two_way_cluster_bootstrap` functions loaded from scientific commit `e4b3645`. All 66 checks pass. Detailed hashes, pairing keys, subject lists and maximum errors are in `phase9_audit/har_verification.json`; the reproduced table is `phase9_audit/har_subject_effects_reproduced.csv`.
+
 ## Primary numerical evidence
 
 Base APS at alpha .10, tuning accuracy-loss allowance .01. Positive size reduction is all-feature minus selected mean size. CI is the supplied paired Student-t interval; p is the supplied Holm-adjusted exact sign-flip p-value.
@@ -72,7 +74,13 @@ Dry Bean APS ConfTS stays at T=1 for these primary subsets and adds no benefit. 
 
 All four subject-coverage intervals cross zero: LR one-shot .000988 [−.001609, .003545], LR recursive −.000176 [−.002894, .002636], NN one-shot −.000012 [−.005227, .004836], NN recursive .003886 [−.003692, .010944]. Their means reproduce from embedded subject coverage dictionaries. SSCV/class-gap changes are mixed. The supplied NN subject-size intervals favor removal, but this does not imply reliability improvement.
 
-The main CSV contains 146,500 embedded subject-coverage entries. The separate `phase8_all_subject_results.csv` is missing. The supplied bootstrap table reports 20 seeds, 100 seed/subject cells and 26 unique held-out subjects per contrast, with 10,000 repetitions. Subject-size rows and the bootstrap intervals were not independently reproduced; the table contains size/coverage effects, not subject accuracy.
+The separate subject CSV is now verified: 146,500 unique result keys, 20 seeds (43–62), five held-out subjects in every aggregate condition and 26 unique held-out subject IDs across seeds. There are no missing expected records, duplicate pairing keys, absent all-feature references or missing required values. Null RAPS parameters occur only as structural APS nulls. Every subject row matches an aggregate row on the frozen condition/subset key and recorded experiment, split ID, selection-data ID, code version, selected indices, primary marker and selection seed. Recorded flags confirm classifier refitting, frozen subsets and no final-calibration/test-driven selection. Subject IDs are integers in the expected HAR domain and window counts are positive integers, constant within each seed/subject.
+
+All subject accuracy, coverage and mean-size values reconcile to the aggregate results after weighting by `window_count`; their stored all-feature references and paired differences also reconcile. Subject coverage additionally agrees with all 146,500 embedded `group_coverages` entries. Aggregate `size_p90` is not reconstructible by averaging subject quantiles, so only its stored references and within-subject differences were checked.
+
+All eight supplied size/coverage summaries reproduce using the frozen primary filter, 10,000-repetition two-way seed/subject bootstrap, seed 810001 and 95% percentile interval. The largest absolute reproduced-table difference is below 1e-16. Each proposed model/path contrast has 100 observed seed/subject cells, 20 seeds and 26 unique subjects. The table contains no subject-accuracy interval; subject accuracy is verified descriptively without adding new inference.
+
+Input identity is recorded at both archive and member level. The subject RAR SHA-256 is `bbe2b687fb29c1d9b285a70498519506107a93d406672ca3f700e97599bd600a`; its CSV member is 4,424,509,870 bytes with SHA-256 `32b5daa57173a6cbd1dce12d3b4c5c3682b82e10d8ddac55666a4147a317d964`. The independently supplied aggregate RAR member matches the aggregate CSV previously audited from ZIP byte-for-byte.
 
 ## Numerical diagnostics and sensitivities
 
@@ -82,8 +90,8 @@ HAR small-NN all-feature APS size is 1.021782 at Base, 1.058356 at TS and 1.0064
 
 Supplied allowance-sensitivity summaries retain positive, Holm-significant small-NN size gains for Dry Bean/HAR at all four allowances. Covertype does not. Fixed removal-count results are not uniformly favorable or significant; do not select a better removal count from test outcomes or claim monotonic improvement.
 
-## Paper decisions and remaining input
+## Paper decisions and remaining limitations
 
 Retain the planned structure: Introduction; Background/related work; Method; Experimental protocol; Results; Discussion; Conclusion, with full-grid supplement. Results must distinguish direct overlap from stability, all-feature gains from matched-baseline gains, and efficiency from reliability. Show actual coverage and flags alongside scaling interaction. Main text retains adverse and null results.
 
-Only `phase8_all_subject_results.csv` is still required for the complete subject-row audit and subject-size plots; a compressed upload is sufficient. To reproduce supplied H3 intervals exactly, also provide the script that generated the two H3 summaries (filename unknown). These gaps do not block the qualified interpretation or manuscript plan. Major manuscript edits await review of that plan; no new experiment is needed.
+The HAR subject evidence gap is closed; no claim decision changes. The remaining source limitation is the unavailable H3 interval-generation script: H3 mean algebra is verified, but its supplied intervals are not independently reproduced. Original split-index files and all individual unit manifests are also unavailable, so the audit verifies recorded provenance and the exact expected subject membership rather than reconstructing the complete split history. Per-window predictions and sets are unavailable, preventing reconstruction of pooled `size_p90` from subject quantiles. These limitations do not block the qualified interpretation or the planned tables/figures. No new experiment is needed.

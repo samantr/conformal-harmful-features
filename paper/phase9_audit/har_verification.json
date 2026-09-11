@@ -1,0 +1,489 @@
+{
+  "checks": {
+    "uploaded_RAR_subject_matches_extracted_CSV": true,
+    "uploaded_RAR_aggregate_matches_verified_ZIP_member": true,
+    "frozen_source_unchanged:src/chf/experiments/statistics.py": true,
+    "frozen_source_unchanged:src/chf/experiments/phase8_runner.py": true,
+    "75800_aggregate_rows": true,
+    "50_units": true,
+    "20_10_20_seeds": true,
+    "146500_subject_rows": true,
+    "HAR_only_20_seeds": true,
+    "scientific_code": true,
+    "classifier_refit": true,
+    "subset_frozen_before_final_calibration": true,
+    "final_calibration_used_for_selection": true,
+    "final_test_used_for_selection": true,
+    "unique_aggregate_keys": true,
+    "unique_subject_keys": true,
+    "no_missing_required": true,
+    "structural_APS_nulls": true,
+    "subject_ID_domain": true,
+    "positive_integer_window_counts": true,
+    "consistent_window_counts": true,
+    "five_subjects_per_condition": true,
+    "every_subject_has_aggregate": true,
+    "aggregate_metadata:experiment": true,
+    "aggregate_metadata:split_id": true,
+    "aggregate_metadata:selection_data_id": true,
+    "aggregate_metadata:code_version": true,
+    "aggregate_metadata:selected_indices": true,
+    "aggregate_metadata:phase8_primary_selected": true,
+    "aggregate_metadata:selection_seed": true,
+    "exact_expected_subject_keys": true,
+    "embedded_subject_coverage": true,
+    "unique_all_feature_references": true,
+    "all_references_present": true,
+    "paired_window_counts": true,
+    "stored_reference:accuracy": true,
+    "subject_difference:accuracy": true,
+    "stored_reference:coverage": true,
+    "subject_difference:coverage": true,
+    "stored_reference:mean_size": true,
+    "subject_difference:mean_size": true,
+    "stored_reference:size_p90": true,
+    "subject_difference:size_p90": true,
+    "subject_size_reduction": true,
+    "all_aggregate_cells:accuracy": true,
+    "window_weighted:accuracy": true,
+    "all_aggregate_cells:coverage": true,
+    "window_weighted:coverage": true,
+    "all_aggregate_cells:mean_size": true,
+    "window_weighted:mean_size": true,
+    "all_aggregate_cells:accuracy_difference_vs_all": true,
+    "window_weighted:accuracy_difference_vs_all": true,
+    "all_aggregate_cells:coverage_difference_vs_all": true,
+    "window_weighted:coverage_difference_vs_all": true,
+    "all_aggregate_cells:mean_size_reduction_vs_all": true,
+    "window_weighted:mean_size_reduction_vs_all": true,
+    "600_primary_subject_rows": true,
+    "100_cells_per_primary_group": true,
+    "eight_summary_keys": true,
+    "bootstrap:n_cells": true,
+    "bootstrap:n_seeds": true,
+    "bootstrap:n_subjects": true,
+    "bootstrap:mean_difference": true,
+    "bootstrap:ci_lower": true,
+    "bootstrap:ci_upper": true,
+    "bootstrap:bootstrap_repetitions": true
+  },
+  "max_errors": {
+    "embedded_subject_coverage": 1.1102230246251565e-16,
+    "stored_reference:accuracy": 0.0,
+    "subject_difference:accuracy": 3.209238430557093e-16,
+    "stored_reference:coverage": 0.0,
+    "subject_difference:coverage": 3.209238430557093e-16,
+    "stored_reference:mean_size": 0.0,
+    "subject_difference:mean_size": 7.216449660063518e-16,
+    "stored_reference:size_p90": 0.0,
+    "subject_difference:size_p90": 5.551115123125783e-17,
+    "subject_size_reduction": 7.216449660063518e-16,
+    "window_weighted:accuracy": 2.220446049250313e-16,
+    "window_weighted:coverage": 3.3306690738754696e-16,
+    "window_weighted:mean_size": 4.440892098500626e-16,
+    "window_weighted:accuracy_difference_vs_all": 2.177077962350893e-16,
+    "window_weighted:coverage_difference_vs_all": 2.181414771040835e-16,
+    "window_weighted:mean_size_reduction_vs_all": 3.469446951953614e-16,
+    "bootstrap:n_cells": 0.0,
+    "bootstrap:n_seeds": 0.0,
+    "bootstrap:n_subjects": 0.0,
+    "bootstrap:mean_difference": 9.400032835449323e-17,
+    "bootstrap:ci_lower": 9.93129189996722e-17,
+    "bootstrap:ci_upper": 9.367506770274758e-17,
+    "bootstrap:bootstrap_repetitions": 0.0
+  },
+  "inputs": [
+    {
+      "path": "/tmp/phase8_all_subject_results.csv",
+      "bytes": 4424509870,
+      "sha256": "32b5daa57173a6cbd1dce12d3b4c5c3682b82e10d8ddac55666a4147a317d964"
+    },
+    {
+      "path": "/tmp/phase8_all_results.csv",
+      "bytes": 991392656,
+      "sha256": "12cbba807af83d4b1c97bdbc9d60d237e9db696a087f595008d6422a96ddcfe2"
+    },
+    {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_har_subject_effects(3).csv",
+      "bytes": 1550,
+      "sha256": "71ef171ce978c05ca937b942aacfece89bb7c626b6ac713abbe43b8d9d240412"
+    },
+    {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_all_subject_results(2).rar",
+      "bytes": 7443075,
+      "sha256": "bbe2b687fb29c1d9b285a70498519506107a93d406672ca3f700e97599bd600a"
+    },
+    {
+      "path": "/workspace/scratch/8b00df27e953/upload/phase8_all_results.rar",
+      "bytes": 5482535,
+      "sha256": "89668b447622f08ceb0adbf4daa8ac4edfc87e97a4cb46ae9006226154701ad1"
+    }
+  ],
+  "archive_members": [
+    {
+      "archive": "/workspace/scratch/8b00df27e953/upload/phase8_all_subject_results(2).rar",
+      "member": "phase8_all_subject_results.csv",
+      "bytes": 4424509870,
+      "sha256": "32b5daa57173a6cbd1dce12d3b4c5c3682b82e10d8ddac55666a4147a317d964"
+    },
+    {
+      "archive": "/workspace/scratch/8b00df27e953/upload/phase8_all_results.rar",
+      "member": "phase8_all_results.csv",
+      "bytes": 991392656,
+      "sha256": "12cbba807af83d4b1c97bdbc9d60d237e9db696a087f595008d6422a96ddcfe2"
+    }
+  ],
+  "frozen_sources": [
+    {
+      "path": "src/chf/experiments/statistics.py",
+      "commit": "e4b3645",
+      "sha256": "cefbe162c5c518722e3f2bf3cee6780eb55beea8f5a018019d9fe4ad3f52e8ba",
+      "functions": [
+        "two_way_cluster_bootstrap"
+      ]
+    },
+    {
+      "path": "src/chf/experiments/phase8_runner.py",
+      "commit": "e4b3645",
+      "sha256": "ad179016363aee21f888970f5efec13fbc3ce99318fb4d07403a8b7fc1240879",
+      "functions": [
+        "_primary_proposed",
+        "_paired_subject_bootstrap_table"
+      ]
+    }
+  ],
+  "settings": {
+    "statistics": {
+      "confidence_level": 0.95,
+      "paired_test": "exact_sign_flip",
+      "sensitivity_test": "wilcoxon_signed_rank",
+      "standardized_effect": "cohens_dz",
+      "rank_effect": "matched_rank_biserial",
+      "multiplicity": "holm_within_dataset_model_metric_family",
+      "subject_bootstrap": "two_way_seed_subject",
+      "subject_bootstrap_repetitions": 10000,
+      "bootstrap_seed": 810001,
+      "precision_escalation": {
+        "maximum_seeds": 20,
+        "minimum_material_contrasts": 2,
+        "half_width_threshold": "max_0.01_or_1pct_all_feature_mean_size"
+      }
+    },
+    "selection": {
+      "primary_alpha": 0.1,
+      "primary_accuracy_loss": 0.01,
+      "accuracy_loss": [
+        0.0,
+        0.005,
+        0.01,
+        0.02
+      ],
+      "removed_features": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "config_sha256": "b7542e556e8c75a62589b543ad000ee2216318a237823365d7a0ca634db5a0b0",
+    "primary": "frozen _primary_proposed: selected marker, Base APS alpha .10; both proposed paths; original CSV row order preserved"
+  },
+  "pairing_keys": {
+    "aggregate": [
+      "dataset",
+      "seed",
+      "model",
+      "alpha",
+      "scaling",
+      "score",
+      "raps_lambda",
+      "raps_k_reg",
+      "method",
+      "target_size",
+      "n_features",
+      "repetition"
+    ],
+    "subject": [
+      "dataset",
+      "seed",
+      "model",
+      "alpha",
+      "scaling",
+      "score",
+      "raps_lambda",
+      "raps_k_reg",
+      "method",
+      "target_size",
+      "n_features",
+      "repetition",
+      "subject_id"
+    ],
+    "all_feature_reference": [
+      "dataset",
+      "seed",
+      "model",
+      "alpha",
+      "scaling",
+      "score",
+      "raps_lambda",
+      "raps_k_reg",
+      "subject_id"
+    ],
+    "nulls": "APS lambda/k are structurally absent; pandas joins match null keys, groupby(dropna=False) retains them."
+  },
+  "missing_by_column": {
+    "experiment": 0,
+    "dataset": 0,
+    "seed": 0,
+    "split_id": 0,
+    "selection_data_id": 0,
+    "code_version": 0,
+    "classifier_refit": 0,
+    "final_calibration_used_for_selection": 0,
+    "final_test_used_for_selection": 0,
+    "model": 0,
+    "method": 0,
+    "target_size": 0,
+    "n_features": 0,
+    "selected_indices": 0,
+    "ranking_source": 0,
+    "selection_seed": 0,
+    "repetition": 0,
+    "subset_frozen_before_final_calibration": 0,
+    "phase8_primary_selected": 0,
+    "tuning_n_removed": 118500,
+    "tuning_max_accuracy_loss": 118500,
+    "tuning_max_coverage_shortfall": 118500,
+    "tuning_efficiency_gain": 118500,
+    "tuning_conditional_violation": 118500,
+    "alpha": 0,
+    "scaling": 0,
+    "score": 0,
+    "raps_lambda": 29050,
+    "raps_k_reg": 29050,
+    "subject_id": 0,
+    "window_count": 0,
+    "accuracy": 0,
+    "coverage": 0,
+    "mean_size": 0,
+    "size_p90": 0,
+    "all_features_accuracy": 0,
+    "all_features_coverage": 0,
+    "all_features_mean_size": 0,
+    "all_features_size_p90": 0,
+    "accuracy_difference_vs_all": 0,
+    "coverage_difference_vs_all": 0,
+    "mean_size_difference_vs_all": 0,
+    "size_p90_difference_vs_all": 0,
+    "mean_size_reduction_vs_all": 0
+  },
+  "population": {
+    "aggregate_HAR_rows": 29300,
+    "subject_rows": 146500,
+    "unique_subjects": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      22,
+      23,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "subjects_by_seed": {
+      "43": [
+        6,
+        8,
+        14,
+        19,
+        25
+      ],
+      "44": [
+        3,
+        7,
+        14,
+        19,
+        23
+      ],
+      "45": [
+        9,
+        13,
+        23,
+        27,
+        29
+      ],
+      "46": [
+        9,
+        10,
+        17,
+        25,
+        29
+      ],
+      "47": [
+        8,
+        9,
+        18,
+        22,
+        25
+      ],
+      "48": [
+        3,
+        5,
+        10,
+        26,
+        28
+      ],
+      "49": [
+        4,
+        8,
+        16,
+        29,
+        30
+      ],
+      "50": [
+        14,
+        15,
+        20,
+        23,
+        25
+      ],
+      "51": [
+        2,
+        15,
+        25,
+        28,
+        29
+      ],
+      "52": [
+        8,
+        10,
+        16,
+        18,
+        25
+      ],
+      "53": [
+        4,
+        7,
+        15,
+        16,
+        20
+      ],
+      "54": [
+        2,
+        10,
+        18,
+        19,
+        23
+      ],
+      "55": [
+        2,
+        6,
+        13,
+        19,
+        23
+      ],
+      "56": [
+        2,
+        4,
+        15,
+        16,
+        27
+      ],
+      "57": [
+        6,
+        13,
+        17,
+        22,
+        30
+      ],
+      "58": [
+        6,
+        8,
+        10,
+        18,
+        28
+      ],
+      "59": [
+        4,
+        11,
+        14,
+        20,
+        27
+      ],
+      "60": [
+        3,
+        5,
+        22,
+        23,
+        26
+      ],
+      "61": [
+        6,
+        11,
+        20,
+        22,
+        25
+      ],
+      "62": [
+        5,
+        6,
+        15,
+        18,
+        28
+      ]
+    },
+    "rows_by_seed": {
+      "43": 5600,
+      "44": 7100,
+      "45": 8600,
+      "46": 8600,
+      "47": 7100,
+      "48": 7100,
+      "49": 7100,
+      "50": 7100,
+      "51": 8600,
+      "52": 8600,
+      "53": 7100,
+      "54": 7100,
+      "55": 7100,
+      "56": 5600,
+      "57": 5600,
+      "58": 7100,
+      "59": 8600,
+      "60": 7100,
+      "61": 8600,
+      "62": 7100
+    }
+  },
+  "environment": {
+    "numpy": "2.3.5",
+    "pandas": "2.2.3"
+  },
+  "limitations": [
+    "Original train/tune/calibration/test split-index files and individual unit manifests unavailable: recorded provenance and expected test subjects reconciled, but full split disjointness not independently re-established.",
+    "Per-window predictions/set sizes unavailable: accuracy, coverage and mean size reconcile by window weights; pooled size_p90 cannot be reconstructed from subject quantiles. Subject size_p90 references and differences are checked.",
+    "Existing H3 interval-generation source remains unavailable; this audit does not reproduce H3 intervals or other seed-level tests.",
+    "Large feature_scores, feature_ranking and selected_features serialization excluded; selected_indices is retained and checked against aggregate.",
+    "Subject accuracy is verified descriptively; frozen subject-effects table has size and coverage only. No new accuracy interval is computed."
+  ],
+  "status": "PASS_WITH_SCOPE_LIMITATIONS"
+}

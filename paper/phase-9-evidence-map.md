@@ -33,12 +33,12 @@ These filenames are emitted by the committed aggregate/finalization scripts and 
 | T2 | Base APS alpha .10: all/proposed absolute size, accuracy, coverage, ECE, SSCV and class gap where recorded; one-shot/recursive paired size and accuracy effects, 95% intervals, exact p, Holm p, paired effect size; all six dataset/model strata | all_results; paired_size_effects; paired_accuracy_effects |
 | T3 | Proposed versus each matched MI/permutation/RFE/SHAP/CRFE comparator, explicit size match and paired n; separate panel for top-1/3/5 across-seed Jaccard/Kuncheva and standard full-rank Spearman | matched_standard_effects; all_results; rank_stability_summary; rank_stability_pairs |
 | T4 | Base/TS/ConfTS absolute sizes and coverage; component and joint gains, residual gains and additive excess; both paths and models, no best-cell selection | all_results; numerical_diagnostics CSV/JSON; any derived contrasts clearly labeled |
-| T5 | Primary conditional reliability and HAR paired subject size/accuracy/coverage effects with two-way bootstrap intervals; numerical boundary frequencies | all_results; all_subject_results; har_subject_effects; numerical_diagnostics |
+| T5 | Primary conditional reliability; HAR paired subject size and coverage effects with reproduced two-way bootstrap intervals; descriptive subject accuracy; numerical boundary frequencies | all_results; all_subject_results; har_subject_effects; numerical_diagnostics; `phase9_audit/har_subject_effects_reproduced.csv` |
 | F1 | Faceted paired-size-effect forest plot with adjacent accuracy and coverage panels, all six dataset/model strata and both paths | paired_size_effects; paired_accuracy_effects; all_results |
 | F2 | Separate within-seed cross-method overlap and across-seed identity-stability panels; no fabricated partial-ranking correlations | rank_stability_pairs/summary for across-seed panel; per-unit files below for cross-method panel |
 | F3 | Frozen removal-count and accuracy-allowance curves with size, accuracy and coverage panels; alpha/RAPS sensitivity faceted separately in supplement | all_results; accuracy_loss_sensitivity_effects; subset_size_sensitivity_effects; per-unit frozen choices if needed to map allowances |
 | F4 | Scaling interaction plot with size/coverage panels and numerical flags, all primary selected subsets; APS in main text and full RAPS grid supplement | all_results; numerical_diagnostics |
-| F5 | HAR subject-weighted effect intervals and subject coverage distribution, nominal .90/.95 references as applicable; windows never treated as independent subjects | all_subject_results; har_subject_effects |
+| F5 | HAR subject-weighted size/coverage effect intervals and subject distributions, nominal .90/.95 references as applicable; windows never treated as independent subjects | `phase9_audit/har_primary_subjects.csv`; `phase9_audit/har_subject_effects_reproduced.csv`; frozen all_subject_results/har_subject_effects |
 
 Supplement: full grid metric tables, full matched comparator/effect-size outputs, sign-flip/Wilcoxon comparison, complete sensitivity and rank tables, precision decisions, saturation counts and provenance. No table pools datasets or score settings as independent replicates. Main text uses Base APS alpha .10 as primary; alpha .05 and RAPS are sensitivity results.
 
@@ -64,13 +64,24 @@ Datasets/seeds: `dry_bean` 43–62, `covertype` 43–52, `human_activity_recogni
 
 ## Upload update and final source mapping
 
-The requested main results and summaries are now supplied; hashes are in phase9_audit/audit.json. Raw inputs remain unchanged. The missing file is phase8_all_subject_results.csv.
+The requested main results, summaries and subject CSV are now supplied and verified. Main-result hashes are in `phase9_audit/audit.json`; subject/archive hashes are in `phase9_audit/har_verification.json`. Raw Phase 8 inputs remain unchanged.
 
 - T1: final JSON metadata verified against main CSV counts; separate subject row count supported by metadata and 146,500 embedded coverage entries.
 - T2/F1: primary_absolute.csv contains audited absolute means; uploaded paired size/accuracy effects provide original intervals and exact/Holm p-values.
 - T3/F2: phase8_h1_removed_overlap_summary(1).csv is exactly reproduced from selected_indices in the main CSV, at matched subset sizes, conditional on nonzero removal. Per-unit selection files are no longer required for this overlap figure. Rank summary means reconcile to pair rows. Full-rank divergence/scatterplots still require actual complete score/rank evidence.
 - T4/F4: supplied phase8_h3_aps_summary(1).csv and phase8_h3_raps_summary(1).csv mean contrasts reproduce from raw rows. APS uses alpha .10; RAPS averages nine cells within seed separately for each alpha. H3 interval-generation source was not supplied; do not call its inference independently verified.
-- T5/F5: subject coverage means verified from group_coverages; supplied two-way bootstrap intervals may be reported with source attribution. Individual subject-size plots and independent bootstrap reproduction await phase8_all_subject_results.csv. The existing subject-effects table contains size and coverage only, not subject accuracy.
+- T5/F5: all 146,500 subject rows and aggregate references verify. Accuracy, coverage and mean size reconcile by window weights. All eight size/coverage summaries and two-way bootstrap intervals reproduce exactly under the frozen implementation/configuration. `har_primary_subjects.csv` is the audited compact plotting source. Subject accuracy remains descriptive because the frozen effects table prespecified only size and coverage.
 - F3: fixed sensitivity summaries support allowance robustness for small-NN Dry Bean/HAR, not monotonic benefits at every removal count. Retain the full grid.
 
-The upload request above is retained as history, not a request to upload all files again. Only the missing subject CSV and, for H3 interval reproduction, its generating script remain needed.
+The upload request above is retained as history, not a request to upload files again. Only the H3 interval-generating script remains missing for exact reproduction of those supplied intervals; this does not block the planned tables and figures.
+
+## Verified Phase 9 table/figure sources
+
+| Output | Audited source | Transformation boundary |
+|---|---|---|
+| T1 | `phase9_audit/audit.json`, `phase9_audit/har_verification.json` | Counts, provenance and precision status only. |
+| T2/F1 | `phase9_audit/primary_absolute.csv`, frozen paired effect tables | Frozen Base APS alpha .10; no test-selected cells. |
+| T3/F2 | `phase9_audit/h1_overlap_verified.csv`, frozen rank pairs/summary | Keep within-seed overlap separate from across-seed stability. |
+| T4/F4 | Frozen H3 summaries, all-results and numerical diagnostics | Means verified; H3 intervals remain supplied; retain undercoverage/saturation. |
+| T5/F5 | `phase9_audit/har_primary_subjects.csv`, `phase9_audit/har_subject_effects_reproduced.csv` | Plot 100 seed/subject cells per contrast; do not treat 146,500 grid rows/windows as independent subjects. |
+| F3 | Frozen allowance/subset-size summaries and all-results | Show full prespecified sensitivity grid; no post-hoc optimum. |

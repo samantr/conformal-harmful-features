@@ -2,7 +2,7 @@
 
 Working title: *Conformal-Harmful Features: Feature Selection for Efficient Adaptive Prediction Sets*
 
-Status (2026-09-11, updated after uploads): primary result rows and key summary arithmetic verified. The historical access-gap and provisional claim text below records the initial plan; the current claims in phase-9-claims-ledger.md and phase-9-verification.md supersede those provisional entries. Planning/support files only; no major manuscript edits.
+Status (2026-09-11, updated after complete HAR verification): primary result rows, key summary arithmetic and all 146,500 HAR subject rows are verified. The eight frozen subject size/coverage bootstrap summaries reproduce exactly. The historical access-gap and provisional claim text below records the initial plan; the current claims in phase-9-claims-ledger.md and phase-9-verification.md supersede those provisional entries. Planning/support files only; no major manuscript edits.
 
 ## Evidence and freeze
 
@@ -78,8 +78,8 @@ No new model fitting, prediction generation, calibration, threshold estimation, 
 
 ## Update after frozen-output verification
 
-Main evidence gap resolved by user uploads. Actual rows confirm 75,800 results, 50 dataset/seed units, 20/10/20 seeds and e4b3645 throughout. All final precision targets are met. Embedded HAR coverage dictionaries contain 146,500 subject entries; the separate subject-results CSV is still absent.
+Main evidence gap resolved by user uploads. Actual rows confirm 75,800 results, 50 dataset/seed units, 20/10/20 seeds and e4b3645 throughout. All final precision targets are met. The separate HAR subject CSV is verified at 146,500 rows, and its eight frozen two-way-bootstrap summaries reproduce exactly.
 
 Final labels: H1 supported with qualification for selection distinctness; H2 partially supported overall, strongest on Dry Bean small NN, with HAR efficiency evidence limited by undercoverage and incomplete matched-comparator superiority; H3 partially supported descriptively as sub-additive complementarity, especially HAR small-NN one-shot; H4 not generally supported. See the populated ledger for boundaries.
 
-Steps 1–3 are complete within the audit scope described in phase-9-verification.md. Review the existing paper structure before major manuscript edits. No experiments have been run. The table/figure plan remains, but H1 can now use selected_indices in the main CSV, and H3 RAPS summaries must be labeled as within-seed averages over nine fixed cells. Do not plot those averages as individual RAPS settings.
+Steps 1–3 are complete within the audit scope described in phase-9-verification.md, including the complete HAR subject-row verification. No experiments have been run. The next step is to generate the planned tables and figures from the audited compact sources, review them and the existing paper structure, and only then begin major manuscript drafting. H1 can use selected_indices in the main CSV; H3 RAPS summaries must be labeled as within-seed averages over nine fixed cells and not plotted as individual settings.
