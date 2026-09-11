@@ -86,18 +86,20 @@ Required before merging `phase-10-final-audit` into `master`:
 - [x] remove tracked IDE metadata and harden ignore rules;
 - [x] refresh stale root project status;
 - [x] review the Phase 10-only diff for accidental scientific changes;
-- [ ] run the repository test suite on the merge candidate;
-- [ ] run the frozen Phase 8 `--plan-only` validation on the merge candidate;
+- [x] run the repository test suite on the merge candidate;
+- [x] run the frozen Phase 8 `--plan-only` validation on the merge candidate;
 - [ ] merge only after the checks above pass.
 
 The Phase 10-only comparison against `phase-9-paper-preparation` contains only `.gitignore`, root `README.md`, removal of tracked `.idea/` files, and this audit document. It contains no `src/`, `experiments/`, `configs/`, `tests/`, frozen evidence, manuscript-result, table, or figure modification.
 
 Draft PR #1 targets `master` from `phase-10-final-audit` and GitHub currently reports it as mergeable. No workflow run was created for the Phase 10 head. The existing Phase 8 CI workflow is configured for pull requests, but because that workflow is introduced by the research branch rather than the current `master`, it did not provide a fresh PR-head validation here. The latest inspected Phase 8 CI on `phase-8-robustness` (run `34252010591`, head `13556b98`) completed successfully, but that historical pass is not treated as a substitute for validating the present merge candidate.
 
-The recommended merge is a squash merge only after the two remaining executable validations pass. Historical Phase 7/8/9 branches should not be deleted as part of the merge itself; branch pruning can be considered separately after the merged master has been verified.
+Fresh validation was completed on 2026-09-12 at merge-candidate commit `6cddb7c`: `python -m pytest -q` passed all 88 tests in 39.28 seconds, and `python experiments/12_robustness_statistics.py --config configs/phase8_robustness.yaml --plan-only --output-dir /tmp/phase8-plan` completed with `Phase 8 plan validated; no dataset was loaded and no model was fit.` These checks changed no tracked repository file other than this audit record.
+
+The recommended merge is now a squash merge. Historical Phase 7/8/9 branches should not be deleted as part of the merge itself; branch pruning can be considered separately after the merged master has been verified.
 
 ## 8. Audit limitations
 
 Phase 10 does not repeat the Phase 8 experiments. It relies on the already completed Phase 9 read-only evidence audit for result integrity. As previously documented, the original split-index files and every individual unit manifest are not available, the H3 interval-generation script was not independently reproduced, and per-window prediction sets are unavailable for reconstruction of pooled `size_p90`. These are manuscript limitations, not repository-merge blockers.
 
-The remaining merge blocker is a fresh execution of the test suite and frozen Phase 8 `--plan-only` validation on the Phase 10 merge candidate. Once those pass, the repository is ready for merge preparation completion; the actual merge remains a separate explicit action.
+The executable merge checks have passed, and merge preparation is complete. The actual squash merge remains a separate explicit action.
