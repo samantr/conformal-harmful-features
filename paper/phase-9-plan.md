@@ -2,7 +2,7 @@
 
 Working title: *Conformal-Harmful Features: Feature Selection for Efficient Adaptive Prediction Sets*
 
-Status (2026-09-11): planning only; final numerical verification blocked by artifact download size. No manuscript results are certified by this document.
+Status (2026-09-11, updated after uploads): primary result rows and key summary arithmetic verified. The historical access-gap and provisional claim text below records the initial plan; the current claims in phase-9-claims-ledger.md and phase-9-verification.md supersede those provisional entries. Planning/support files only; no major manuscript edits.
 
 ## Evidence and freeze
 
@@ -12,16 +12,16 @@ The documented final design is Dry Bean 20 seeds (43–62), Covertype 10 (43–5
 
 Phases 0–8, configurations, scientific code and all experimental outputs remain frozen. No experiments, seeds, temperatures, subsets or result values may be changed. No merge to master. Phase 7 observations are descriptive anchors, not extra Phase 8 replicates.
 
-## Claims proposed for verification
+## Verified claim boundaries
 
-| Hypothesis | Proposed status, not yet numerically verified | Permitted final wording and evidence requirement |
-|---|---|---|
-| H1 | Supported with qualification, pending direct cross-method evidence | Classification-oriented rankings and conformal-harm intervention choices differ. Separate within-seed cross-method disagreement from across-seed instability. Low stability alone cannot establish H1; do not imply stable intrinsic harmful-feature identities. |
-| H2 | Conditional support; full hypothesis unresolved | Report efficiency gains by dataset, model and path, with accuracy and coverage alongside. Verify the proposed strongest small-NN findings on Dry Bean/HAR. HAR undercoverage cannot support the original coverage-qualified H2, even with significant size gains. Superiority to all ordinary selectors requires every prespecified matched comparison after correction, not merely a win over all features. |
-| H3 | Partial support proposed | Test whether the combined intervention has residual benefit beyond either component but less than their summed benefit. Use “sub-additive complementarity” only in cells that establish this pattern. No general synergy claim, and no safe-efficiency claim for numerically flagged cells. |
-| H4 | Not generally supported proposed | Report SSCV, class gaps and subject effects, including mixed or adverse findings. Failure to establish improvement is not proof of equivalence or no effect. |
+| Hypothesis | Final interpretation for planning |
+|---|---|
+| H1 | Supported with qualification: direct removed-set disagreement is verified, but exact feature identities are unstable and complete-rank divergence is not established by these overlaps. |
+| H2 | Partially supported overall: strongest combined evidence is Dry Bean small NN. HAR size gains do not establish coverage-preserving superiority; LR/Covertype utility is not established. |
+| H3 | Partially supported descriptively: sub-additive complementarity especially HAR small-NN one-shot, with weaker recursive residual evidence and explicit saturation/coverage limits. |
+| H4 | Not generally supported: mixed conditional metrics and subject-coverage intervals crossing zero; no equivalence claim. |
 
-Final supported/partial/unsupported labels must be filled only after the evidence ledger is populated. All p-values and confidence intervals must come from identified outputs or explicitly labeled frozen-output derived analyses.
+See phase-9-verification.md for numbers and audit boundaries. No general synergy, universal selector superiority or blanket nominal-coverage claim.
 
 ## Proposed paper structure
 
@@ -75,3 +75,11 @@ No new model fitting, prediction generation, calibration, threshold estimation, 
 3. Populate `phase-9-claims-ledger.md` with numerical evidence and corrected hypothesis labels. Resolve missing H1 source data explicitly.
 4. Review this plan and paper structure before major manuscript edits.
 5. Produce tables/figures from frozen outputs, then draft Results and Discussion, then other sections and abstract. Keep unsupported and adverse findings visible.
+
+## Update after frozen-output verification
+
+Main evidence gap resolved by user uploads. Actual rows confirm 75,800 results, 50 dataset/seed units, 20/10/20 seeds and e4b3645 throughout. All final precision targets are met. Embedded HAR coverage dictionaries contain 146,500 subject entries; the separate subject-results CSV is still absent.
+
+Final labels: H1 supported with qualification for selection distinctness; H2 partially supported overall, strongest on Dry Bean small NN, with HAR efficiency evidence limited by undercoverage and incomplete matched-comparator superiority; H3 partially supported descriptively as sub-additive complementarity, especially HAR small-NN one-shot; H4 not generally supported. See the populated ledger for boundaries.
+
+Steps 1–3 are complete within the audit scope described in phase-9-verification.md. Review the existing paper structure before major manuscript edits. No experiments have been run. The table/figure plan remains, but H1 can now use selected_indices in the main CSV, and H3 RAPS summaries must be labeled as within-seed averages over nine fixed cells. Do not plot those averages as individual RAPS settings.

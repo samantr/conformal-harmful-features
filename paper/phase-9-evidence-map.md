@@ -1,6 +1,6 @@
 # Phase 9 evidence map and upload request
 
-Status: final artifact identified but not downloaded. Source run: https://github.com/samantr/conformal-harmful-features/actions/runs/34251770903 . Download `phase8-final-precision-extension` and upload a smaller ZIP containing the following final CSV/JSON files only (no checkpoints/models/datasets). Preserve names and values.
+Historical initial request (superseded by upload update below): final artifact identified but not downloaded. Source run: https://github.com/samantr/conformal-harmful-features/actions/runs/34251770903 . Download `phase8-final-precision-extension` and upload a smaller ZIP containing the following final CSV/JSON files only (no checkpoints/models/datasets). Preserve names and values.
 
 ## Exact required files
 
@@ -61,3 +61,16 @@ Datasets/seeds: `dry_bean` 43–62, `covertype` 43–52, `human_activity_recogni
 - Reconcile paired n, signs, intervals and correction families; preserve initial and final precision decisions separately.
 - Retain every numerical flag and every coverage failure. Report missing cells and summaries rather than silently dropping them.
 - Hash input files once available and record which rows feed every output. Preserve Phase 8 files byte-for-byte.
+
+## Upload update and final source mapping
+
+The requested main results and summaries are now supplied; hashes are in phase9_audit/audit.json. Raw inputs remain unchanged. The missing file is phase8_all_subject_results.csv.
+
+- T1: final JSON metadata verified against main CSV counts; separate subject row count supported by metadata and 146,500 embedded coverage entries.
+- T2/F1: primary_absolute.csv contains audited absolute means; uploaded paired size/accuracy effects provide original intervals and exact/Holm p-values.
+- T3/F2: phase8_h1_removed_overlap_summary(1).csv is exactly reproduced from selected_indices in the main CSV, at matched subset sizes, conditional on nonzero removal. Per-unit selection files are no longer required for this overlap figure. Rank summary means reconcile to pair rows. Full-rank divergence/scatterplots still require actual complete score/rank evidence.
+- T4/F4: supplied phase8_h3_aps_summary(1).csv and phase8_h3_raps_summary(1).csv mean contrasts reproduce from raw rows. APS uses alpha .10; RAPS averages nine cells within seed separately for each alpha. H3 interval-generation source was not supplied; do not call its inference independently verified.
+- T5/F5: subject coverage means verified from group_coverages; supplied two-way bootstrap intervals may be reported with source attribution. Individual subject-size plots and independent bootstrap reproduction await phase8_all_subject_results.csv. The existing subject-effects table contains size and coverage only, not subject accuracy.
+- F3: fixed sensitivity summaries support allowance robustness for small-NN Dry Bean/HAR, not monotonic benefits at every removal count. Retain the full grid.
+
+The upload request above is retained as history, not a request to upload all files again. Only the missing subject CSV and, for H3 interval reproduction, its generating script remain needed.
