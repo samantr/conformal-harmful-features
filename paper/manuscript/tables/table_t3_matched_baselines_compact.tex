@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Size-matched comparator summary. Positive effects mean smaller mean prediction sets for the proposed subset. Wins count the five prespecified selectors whose supplied Holm-adjusted exact sign-flip $p<0.05$ and whose effect favors the proposed method; this is a descriptive reduction of the five corrected contrasts, not a new test. Full intervals, effect sizes and $p$ values are retained in the supplement.}
+\label{tab:t3-baseline-compact}
+\small
+\begin{tabular}{llllllll}
+\hline
+Dataset & Model & Path & n & Matched retained-feature range & Wins & Comparators beaten & Point-effect range \\
+\hline
+Covertype & LR & One-shot & 10 & 49--53 & 0/5 & None & 0.0002--0.0107 \\
+Covertype & LR & Recursive & 10 & 49--51 & 1/5 & CRFE & 0.0010--0.0165 \\
+Covertype & Small NN & One-shot & 10 & 53--53 & 0/5 & None & 0.0001--0.0092 \\
+Covertype & Small NN & Recursive & 10 & 49--53 & 0/5 & None & -0.0020--0.0399 \\
+Dry Bean & LR & One-shot & 20 & 13--16 & 0/5 & None & 0.0006--0.0024 \\
+Dry Bean & LR & Recursive & 20 & 11--16 & 1/5 & MI & 0.0008--0.0176 \\
+Dry Bean & Small NN & One-shot & 20 & 11--16 & 5/5 & MI,RFE,Permutation,SHAP,CRFE & 0.0123--0.0197 \\
+Dry Bean & Small NN & Recursive & 20 & 11--16 & 5/5 & MI,RFE,Permutation,SHAP,CRFE & 0.0148--0.0337 \\
+HAR & LR & One-shot & 20 & 556--560 & 0/5 & None & 0.0014--0.0021 \\
+HAR & LR & Recursive & 20 & 556--557 & 0/5 & None & 0.0017--0.0034 \\
+HAR & Small NN & One-shot & 20 & 557--561 & 4/5 & MI,Permutation,SHAP,CRFE & 0.0113--0.0221 \\
+HAR & Small NN & Recursive & 20 & 556--560 & 1/5 & SHAP & 0.0079--0.0172 \\
+\hline
+\end{tabular}
+\end{table*}

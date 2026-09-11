@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Selection distinctness and identity stability. Within-seed Jaccard ranges summarize the five size-matched conventional selectors at the same seed and removed-feature count; zero-removal cases are excluded only from this overlap estimand and the conditional $n$ is shown. Across-seed top-1 Jaccard is computed over overlapping seed pairs (45 for Covertype, 190 for the 20-seed datasets), which are not independent replications.}
+\label{tab:t3-h1-compact}
+\small
+\begin{tabular}{llllllll}
+\hline
+Dataset & Model & Path & Overlap n & Mean removed & Within-seed Jaccard range & Seed pairs & Across-seed top-1 Jaccard \\
+\hline
+Covertype & LR & One-shot & 10 & 3.00 & 0.0000--0.0222 & 45 & 0.3556 \\
+Covertype & LR & Recursive & 10 & 4.60 & 0.0111--0.0561 & 45 & 0.3556 \\
+Covertype & Small NN & One-shot & 10 & 1.00 & 0.0000--0.1000 & 45 & 0.0000 \\
+Covertype & Small NN & Recursive & 10 & 2.30 & 0.0000--0.1000 & 45 & 0.0000 \\
+Dry Bean & LR & One-shot & 19 & 1.26 & 0.2018--0.2193 & 190 & 0.0789 \\
+Dry Bean & LR & Recursive & 19 & 2.58 & 0.1180--0.2145 & 190 & 0.0789 \\
+Dry Bean & Small NN & One-shot & 19 & 1.74 & 0.0058--0.0490 & 190 & 0.0474 \\
+Dry Bean & Small NN & Recursive & 19 & 2.84 & 0.0175--0.1011 & 190 & 0.0474 \\
+HAR & LR & One-shot & 20 & 4.35 & 0.0000--0.0383 & 190 & 0.0895 \\
+HAR & LR & Recursive & 20 & 4.85 & 0.0000--0.0532 & 190 & 0.0895 \\
+HAR & Small NN & One-shot & 19 & 1.42 & 0.0000--0.0000 & 190 & 0.0000 \\
+HAR & Small NN & Recursive & 20 & 3.25 & 0.0000--0.0111 & 190 & 0.0000 \\
+\hline
+\end{tabular}
+\end{table*}

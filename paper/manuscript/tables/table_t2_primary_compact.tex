@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Primary Base-APS results at $\alpha=0.10$ with tuning accuracy-loss allowance 0.01. Set-size reduction is all-feature minus selected mean size (positive favors removal); accuracy difference is selected minus all-feature accuracy (positive favors removal). Intervals are paired Student-$t$ 95\% CIs and $p$ values are Holm-adjusted exact sign-flip tests. Coverage is descriptive; no new coverage interval or noninferiority claim is implied.}
+\label{tab:t2-primary-compact}
+\small
+\begin{tabular}{llllllll}
+\hline
+Dataset & Model & Path & Mean size all$\to$selected & $\Delta$ size [95\% CI]; Holm p & Accuracy all$\to$selected & $\Delta$ accuracy [95\% CI]; Holm p & Coverage all$\to$selected \\
+\hline
+Covertype & LR & One-shot & 1.6372$\to$1.6368 & 0.0004 [-0.001443, 0.002197]; p=0.666016 & 0.7240$\to$0.7240 & -0.0000 [-0.000277, 0.000273]; p=0.998047 & 0.8996$\to$0.8996 \\
+Covertype & LR & Recursive & 1.6372$\to$1.6359 & 0.0013 [-0.000578, 0.003117]; p=0.312500 & 0.7240$\to$0.7238 & -0.0002 [-0.000552, 0.000240]; p=0.898438 & 0.8996$\to$0.8995 \\
+Covertype & Small NN & One-shot & 1.2358$\to$1.2301 & 0.0057 [-0.004183, 0.015592]; p=0.457031 & 0.8619$\to$0.8647 & 0.0028 [-0.000453, 0.006081]; p=0.164062 & 0.9001$\to$0.9004 \\
+Covertype & Small NN & Recursive & 1.2358$\to$1.2315 & 0.0043 [-0.006037, 0.014581]; p=0.457031 & 0.8619$\to$0.8639 & 0.0020 [-0.001175, 0.005231]; p=0.187500 & 0.9001$\to$0.9003 \\
+Dry Bean & LR & One-shot & 1.0947$\to$1.0957 & -0.0010 [-0.002455, 0.000471]; p=0.184364 & 0.9233$\to$0.9228 & -0.0005 [-0.001087, 0.000074]; p=0.101562 & 0.9014$\to$0.9014 \\
+Dry Bean & LR & Recursive & 1.0947$\to$1.0961 & -0.0014 [-0.002856, -0.000008]; p=0.106918 & 0.9233$\to$0.9226 & -0.0007 [-0.001492, -0.000007]; p=0.100220 & 0.9014$\to$0.9015 \\
+Dry Bean & Small NN & One-shot & 1.0805$\to$1.0635 & 0.0170 [0.007914, 0.026021]; p=0.00000763 & 0.9251$\to$0.9284 & 0.0033 [0.001401, 0.005166]; p=0.001648 & 0.8991$\to$0.8994 \\
+Dry Bean & Small NN & Recursive & 1.0805$\to$1.0627 & 0.0178 [0.008777, 0.026745]; p=0.00000763 & 0.9251$\to$0.9288 & 0.0037 [0.001882, 0.005479]; p=0.000519 & 0.8991$\to$0.8987 \\
+HAR & LR & One-shot & 1.0022$\to$1.0014 & 0.0008 [-0.001997, 0.003645]; p=0.699783 & 0.9278$\to$0.9290 & 0.0012 [-0.000189, 0.002635]; p=0.169754 & 0.8882$\to$0.8891 \\
+HAR & LR & Recursive & 1.0022$\to$1.0008 & 0.0014 [-0.001704, 0.004541]; p=0.699783 & 0.9278$\to$0.9278 & 0.0001 [-0.001558, 0.001670]; p=0.944744 & 0.8882$\to$0.8880 \\
+HAR & Small NN & One-shot & 1.0218$\to$1.0040 & 0.0178 [0.009855, 0.025693]; p=0.000717 & 0.9177$\to$0.9204 & 0.0027 [-0.001045, 0.006365]; p=0.284912 & 0.8882$\to$0.8882 \\
+HAR & Small NN & Recursive & 1.0218$\to$1.0086 & 0.0132 [0.004643, 0.021805]; p=0.004959 & 0.9177$\to$0.9214 & 0.0037 [-0.001336, 0.008648]; p=0.284912 & 0.8882$\to$0.8922 \\
+\hline
+\end{tabular}
+\end{table*}

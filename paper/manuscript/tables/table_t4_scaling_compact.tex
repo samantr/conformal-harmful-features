@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Frozen APS feature-removal $\times$ ConfTS interaction at $\alpha=0.10$. Feature gain is all-ConfTS minus selected-ConfTS size; scaling gain is all-Base minus all-ConfTS; combined gain is all-Base minus selected-ConfTS. Positive values indicate smaller sets. Additive excess is $B+C-A-D$; negative values indicate sub-additivity. H3 means were independently reconciled, but interval values remain supplied Phase 8 evidence because their original generator is unavailable.}
+\label{tab:t4-scaling-compact}
+\small
+\begin{tabular}{lllllllll}
+\hline
+Dataset & Model & Path & Feature gain [95\% CI] & Scaling gain [95\% CI] & Combined gain [95\% CI] & Additive excess [95\% CI] & Selected size & Selected coverage \\
+\hline
+Covertype & LR & One-shot & 0.0004 [-0.001443, 0.002197] & 0.0000 [0.000000, 0.000000] & 0.0004 [-0.001443, 0.002197] & 0.0000 [0.000000, 0.000000] & 1.6368 & 0.8996 \\
+Covertype & LR & Recursive & 0.0013 [-0.000578, 0.003117] & 0.0000 [0.000000, 0.000000] & 0.0013 [-0.000578, 0.003117] & 0.0000 [0.000000, 0.000000] & 1.6359 & 0.8995 \\
+Covertype & Small NN & One-shot & 0.0047 [-0.006698, 0.016058] & 0.0000 [0.000000, 0.000000] & 0.0047 [-0.006698, 0.016058] & -0.0010 [-0.003342, 0.001293] & 1.2311 & 0.9004 \\
+Covertype & Small NN & Recursive & 0.0043 [-0.006037, 0.014581] & 0.0000 [0.000000, 0.000000] & 0.0043 [-0.006037, 0.014581] & 0.0000 [0.000000, 0.000000] & 1.2315 & 0.9003 \\
+Dry Bean & LR & One-shot & -0.0010 [-0.002455, 0.000471] & 0.0000 [0.000000, 0.000000] & -0.0010 [-0.002455, 0.000471] & 0.0000 [0.000000, 0.000000] & 1.0957 & 0.9014 \\
+Dry Bean & LR & Recursive & -0.0014 [-0.002856, -0.000008] & 0.0000 [0.000000, 0.000000] & -0.0014 [-0.002856, -0.000008] & 0.0000 [0.000000, 0.000000] & 1.0961 & 0.9015 \\
+Dry Bean & Small NN & One-shot & 0.0170 [0.007914, 0.026021] & 0.0000 [0.000000, 0.000000] & 0.0170 [0.007914, 0.026021] & 0.0000 [0.000000, 0.000000] & 1.0635 & 0.8994 \\
+Dry Bean & Small NN & Recursive & 0.0178 [0.008777, 0.026745] & 0.0000 [0.000000, 0.000000] & 0.0178 [0.008777, 0.026745] & 0.0000 [0.000000, 0.000000] & 1.0627 & 0.8987 \\
+HAR & LR & One-shot & 0.0010 [-0.001977, 0.004072] & 0.0077 [0.001485, 0.013841] & 0.0087 [0.001134, 0.016287] & 0.0002 [-0.001773, 0.002221] & 0.9935 & 0.8894 \\
+HAR & LR & Recursive & 0.0005 [-0.002477, 0.003412] & 0.0077 [0.001485, 0.013841] & 0.0081 [0.000136, 0.016125] & -0.0010 [-0.003143, 0.001240] & 0.9941 & 0.8887 \\
+HAR & Small NN & One-shot & 0.0080 [0.002255, 0.013836] & 0.0153 [0.007005, 0.023574] & 0.0233 [0.012116, 0.034554] & -0.0097 [-0.015758, -0.003699] & 0.9984 & 0.8876 \\
+HAR & Small NN & Recursive & 0.0038 [-0.002195, 0.009833] & 0.0153 [0.007005, 0.023574] & 0.0191 [0.009895, 0.028322] & -0.0094 [-0.014915, -0.003894] & 1.0027 & 0.8920 \\
+\hline
+\end{tabular}
+\end{table*}
