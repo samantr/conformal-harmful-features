@@ -3,7 +3,8 @@
 **Date:** 2026-09-12  
 **Source branch:** `phase-9-paper-preparation` at `831d064709f92a8e8f955584b8b7c57aa226f2af`  
 **Cleanup branch:** `phase-10-final-audit`  
-**Target branch:** `master`
+**Target branch:** `master`  
+**Merge candidate:** draft PR #1
 
 Phase 10 is repository maintenance and merge preparation only. It does not authorize model fitting, new seeds, tuning, recalibration, subset reselection, grid expansion, result replacement, or new scientific hypothesis tests.
 
@@ -84,15 +85,19 @@ Required before merging `phase-10-final-audit` into `master`:
 - [x] confirm final evidence counts and scientific version from the Phase 9 audit;
 - [x] remove tracked IDE metadata and harden ignore rules;
 - [x] refresh stale root project status;
-- [ ] run the repository test suite in CI on the merge candidate;
-- [ ] run the frozen Phase 8 `--plan-only` validation in CI;
-- [ ] review the final PR diff for accidental scientific changes;
+- [x] review the Phase 10-only diff for accidental scientific changes;
+- [ ] run the repository test suite on the merge candidate;
+- [ ] run the frozen Phase 8 `--plan-only` validation on the merge candidate;
 - [ ] merge only after the checks above pass.
 
-The recommended merge is a squash merge of the Phase 10 cleanup branch into `master` only after review. Historical Phase 7/8/9 branches should not be deleted as part of the merge itself; branch pruning can be considered separately after the merged master has been verified.
+The Phase 10-only comparison against `phase-9-paper-preparation` contains only `.gitignore`, root `README.md`, removal of tracked `.idea/` files, and this audit document. It contains no `src/`, `experiments/`, `configs/`, `tests/`, frozen evidence, manuscript-result, table, or figure modification.
+
+Draft PR #1 targets `master` from `phase-10-final-audit` and GitHub currently reports it as mergeable. No workflow run was created for the Phase 10 head. The existing Phase 8 CI workflow is configured for pull requests, but because that workflow is introduced by the research branch rather than the current `master`, it did not provide a fresh PR-head validation here. The latest inspected Phase 8 CI on `phase-8-robustness` (run `34252010591`, head `13556b98`) completed successfully, but that historical pass is not treated as a substitute for validating the present merge candidate.
+
+The recommended merge is a squash merge only after the two remaining executable validations pass. Historical Phase 7/8/9 branches should not be deleted as part of the merge itself; branch pruning can be considered separately after the merged master has been verified.
 
 ## 8. Audit limitations
 
 Phase 10 does not repeat the Phase 8 experiments. It relies on the already completed Phase 9 read-only evidence audit for result integrity. As previously documented, the original split-index files and every individual unit manifest are not available, the H3 interval-generation script was not independently reproduced, and per-window prediction sets are unavailable for reconstruction of pooled `size_p90`. These are manuscript limitations, not repository-merge blockers.
 
-The remaining merge blocker at creation of this file is CI execution on the Phase 10 merge candidate. Once CI passes and the PR diff is reviewed, the repository is ready for merge preparation completion; the actual merge remains a separate explicit action.
+The remaining merge blocker is a fresh execution of the test suite and frozen Phase 8 `--plan-only` validation on the Phase 10 merge candidate. Once those pass, the repository is ready for merge preparation completion; the actual merge remains a separate explicit action.
